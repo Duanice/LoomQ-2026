@@ -15,14 +15,23 @@ measure q -> c;
 
 
 class SimulatorTests(unittest.TestCase):
-    def test_spinq_bell_passes_schema_and_fidelity(self):
-        result = adapter.run(qasm("h q[0];\ncx q[0],q[1];", 2), "spinq", 8192)
-        self.assertEqual(validate_schema(result), (True, "schema valid"))
-        observed = {key: value / 8192 for key, value in result["counts"].items()}
-        self.assertGreaterEqual(
-            calculate_hellinger_fidelity(observed, {"00": 0.5, "11": 0.5}),
-            0.97,
-        )
+    def test_supported_targets_pass_bell_schema_and_fidelity(self):
+        for target in ("spinq", "originq"):
+            with self.subTest(target=target):
+                result = adapter.run(
+                    qasm("h q[0];\ncx q[0],q[1];", 2), target, 8192
+                )
+                self.assertEqual(validate_schema(result), (True, "schema valid"))
+                self.assertEqual(result["backend"], f"{target}_builtin_simulator")
+                observed = {
+                    key: value / 8192 for key, value in result["counts"].items()
+                }
+                self.assertGreaterEqual(
+                    calculate_hellinger_fidelity(
+                        observed, {"00": 0.5, "11": 0.5}
+                    ),
+                    0.97,
+                )
 
     def test_phase_and_rotation_gates(self):
         phase = adapter.run(

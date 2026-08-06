@@ -41,16 +41,16 @@ def run(qasm_str: str, target: str, shots: int) -> Dict[str, Any]:
         raise ValueError("shots must be a positive integer")
     if target not in SUPPORTED_TARGETS:
         raise ValueError(f"Unsupported target: {target}")
-    if target != "spinq":
+    if target not in ("spinq", "originq"):
         raise NotImplementedError(f"Runner not implemented for target: {target}")
 
-    native_qasm = transpile(qasm_str, target)
-    circuit = parse_qasm(native_qasm)
-    digest = hashlib.sha256(native_qasm.encode("utf-8")).hexdigest()[:16]
+    native_ir = transpile(qasm_str, target)
+    circuit = parse_qasm(qasm_str)
+    digest = hashlib.sha256(native_ir.encode("utf-8")).hexdigest()[:16]
     seed = int(digest, 16) ^ shots
     return {
-        "backend": "spinq_builtin_simulator",
-        "job_id": f"spinq-local-{digest}",
+        "backend": f"{target}_builtin_simulator",
+        "job_id": f"{target}-local-{digest}",
         "shots": shots,
         "counts": sample_counts(circuit, shots, seed),
         "bit_order": "little",
