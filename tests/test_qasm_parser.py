@@ -1,7 +1,7 @@
 import unittest
 
 from starter_kit import adapter
-from starter_kit.emitters import emit_spinq
+from starter_kit.emitters import emit_originq, emit_spinq
 from starter_kit.qasm_parser import Circuit, Measurement, Operation, parse_qasm
 
 
@@ -72,6 +72,46 @@ class QasmParserTests(unittest.TestCase):
         emitted = emit_spinq(circuit)
         self.assertEqual(parse_qasm(emitted), circuit)
         self.assertEqual(adapter.transpile(BELL_QASM, "spinq"), emitted)
+
+    def test_originq_emitter_matches_contract(self):
+        emitted = emit_originq(parse_qasm(BELL_QASM))
+        self.assertEqual(
+            emitted,
+            """QINIT 2
+CREG 2
+H q[0]
+CNOT q[0], q[1]
+MEASURE q[0], c[0]
+MEASURE q[1], c[1]
+""",
+        )
+        self.assertEqual(adapter.transpile(BELL_QASM, "originq"), emitted)
+
+    def test_originq_emitter_maps_all_twelve_gates(self):
+        source = """OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[3]; creg c[3];
+        h q[0]; x q[0]; s q[0]; sdg q[0]; t q[0]; tdg q[0];
+        ry(pi/2) q[0]; rz(-pi/4) q[0]; cx q[0],q[1];
+        cu1(pi/3) q[0],q[1]; swap q[1],q[2]; ccx q[0],q[1],q[2];
+        measure q -> c;
+        """
+        emitted = emit_originq(parse_qasm(source))
+        for expected in (
+            "H q[0]",
+            "X q[0]",
+            "S q[0]",
+            "SDAG q[0]",
+            "T q[0]",
+            "TDAG q[0]",
+            "RY(pi/2) q[0]",
+            "RZ(-pi/4) q[0]",
+            "CNOT q[0], q[1]",
+            "CU1(pi/3) q[0], q[1]",
+            "SWAP q[1], q[2]",
+            "TOFFOLI q[0], q[1], q[2]",
+        ):
+            self.assertIn(expected, emitted.splitlines())
 
 
 if __name__ == "__main__":
