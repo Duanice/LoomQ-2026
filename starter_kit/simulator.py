@@ -22,7 +22,7 @@ _BINARY_OPERATORS = {
 }
 
 
-def _angle(expression: str) -> float:
+def evaluate_angle(expression: str) -> float:
     """Evaluate numeric/pi arithmetic without using eval()."""
 
     tree = ast.parse(expression.replace("^", "**"), mode="eval")
@@ -100,13 +100,13 @@ def _apply_operation(state: list[complex], operation: Operation) -> None:
     elif name == "tdg":
         matrix = ((1, 0), (0, cmath.exp(-1j * math.pi / 4)))
     elif name == "ry":
-        theta = _angle(operation.parameter or "")
+        theta = evaluate_angle(operation.parameter or "")
         matrix = (
             (math.cos(theta / 2), -math.sin(theta / 2)),
             (math.sin(theta / 2), math.cos(theta / 2)),
         )
     elif name == "rz":
-        theta = _angle(operation.parameter or "")
+        theta = evaluate_angle(operation.parameter or "")
         matrix = (
             (cmath.exp(-1j * theta / 2), 0),
             (0, cmath.exp(1j * theta / 2)),
@@ -115,7 +115,7 @@ def _apply_operation(state: list[complex], operation: Operation) -> None:
         _apply_controlled_x(state, (qubits[0],), qubits[1])
         return
     elif name == "cu1":
-        theta = _angle(operation.parameter or "")
+        theta = evaluate_angle(operation.parameter or "")
         both_one = (1 << qubits[0]) | (1 << qubits[1])
         phase = cmath.exp(1j * theta)
         for index in range(len(state)):

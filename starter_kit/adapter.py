@@ -11,10 +11,12 @@ from typing import Any, Dict, List, Tuple
 
 try:
     from .emitters import emit_braket, emit_originq, emit_spinq
+    from .platform_runners import run_braket, run_originq
     from .qasm_parser import parse_qasm
     from .simulator import sample_counts
 except ImportError:  # Support `python starter_kit/evaluator.py`.
     from emitters import emit_braket, emit_originq, emit_spinq
+    from platform_runners import run_braket, run_originq
     from qasm_parser import parse_qasm
     from simulator import sample_counts
 
@@ -44,6 +46,11 @@ def run(qasm_str: str, target: str, shots: int) -> Dict[str, Any]:
 
     native_ir = transpile(qasm_str, target)
     circuit = parse_qasm(qasm_str)
+    if target == "originq":
+        return run_originq(circuit, native_ir, shots)
+    if target == "braket":
+        return run_braket(circuit, shots)
+
     digest = hashlib.sha256(native_ir.encode("utf-8")).hexdigest()[:16]
     seed = int(digest, 16) ^ shots
     return {

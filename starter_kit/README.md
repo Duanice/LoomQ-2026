@@ -53,9 +53,12 @@ python3 evaluator.py --level l1 --target spinq,originq --json-out report.json
 也可以先验证基础容器：
 
 ```bash
-docker build -t loomq-submission .
+docker build --platform linux/amd64 -t loomq-submission .
 docker run --rm loomq-submission
 ```
+
+`pyqpanda` 的 Linux wheel 是 x86_64；Apple Silicon Mac 也应使用上述
+`--platform linux/amd64` 参数构建。
 
 ## Adapter 契约
 
