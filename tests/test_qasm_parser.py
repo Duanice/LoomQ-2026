@@ -1,5 +1,7 @@
 import unittest
 
+from starter_kit import adapter
+from starter_kit.emitters import emit_spinq
 from starter_kit.qasm_parser import Circuit, Measurement, Operation, parse_qasm
 
 
@@ -64,6 +66,12 @@ class QasmParserTests(unittest.TestCase):
             tuple(operation.name for operation in circuit.operations),
             ("h", "x", "s", "sdg", "t", "tdg", "rz", "ry", "cx", "cu1", "swap", "ccx"),
         )
+
+    def test_spinq_emitter_round_trips_through_parser(self):
+        circuit = parse_qasm(BELL_QASM)
+        emitted = emit_spinq(circuit)
+        self.assertEqual(parse_qasm(emitted), circuit)
+        self.assertEqual(adapter.transpile(BELL_QASM, "spinq"), emitted)
 
 
 if __name__ == "__main__":

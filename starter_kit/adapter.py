@@ -7,13 +7,26 @@ the functions directly or delegate to another language/runtime with subprocess.
 
 from typing import Any, Dict, List, Tuple
 
+try:
+    from .emitters import emit_spinq
+    from .qasm_parser import parse_qasm
+except ImportError:  # Support `python starter_kit/evaluator.py`.
+    from emitters import emit_spinq
+    from qasm_parser import parse_qasm
+
 
 SUPPORTED_TARGETS = ("spinq", "originq", "braket")
 
 
 def transpile(qasm_str: str, target: str) -> str:
     """Translate OpenQASM 2.0 into the target backend's native representation."""
-    raise NotImplementedError("Implement transpile(qasm_str, target)")
+    if target not in SUPPORTED_TARGETS:
+        raise ValueError(f"Unsupported target: {target}")
+
+    circuit = parse_qasm(qasm_str)
+    if target == "spinq":
+        return emit_spinq(circuit)
+    raise NotImplementedError(f"Emitter not implemented for target: {target}")
 
 
 def run(qasm_str: str, target: str, shots: int) -> Dict[str, Any]:
