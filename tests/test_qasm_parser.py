@@ -1,7 +1,7 @@
 import unittest
 
 from starter_kit import adapter
-from starter_kit.emitters import emit_originq, emit_spinq
+from starter_kit.emitters import emit_braket, emit_originq, emit_spinq
 from starter_kit.qasm_parser import Circuit, Measurement, Operation, parse_qasm
 
 
@@ -112,6 +112,48 @@ MEASURE q[1], c[1]
             "TOFFOLI q[0], q[1], q[2]",
         ):
             self.assertIn(expected, emitted.splitlines())
+
+    def test_braket_emitter_matches_contract(self):
+        emitted = emit_braket(parse_qasm(BELL_QASM))
+        self.assertEqual(
+            emitted,
+            """OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+h q[0];
+cnot q[0], q[1];
+c[0] = measure q[0];
+c[1] = measure q[1];
+""",
+        )
+        self.assertEqual(adapter.transpile(BELL_QASM, "braket"), emitted)
+
+    def test_braket_emitter_maps_all_twelve_gates(self):
+        source = """OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[3]; creg c[3];
+        h q[0]; x q[0]; s q[0]; sdg q[0]; t q[0]; tdg q[0];
+        ry(pi/2) q[0]; rz(-pi/4) q[0]; cx q[0],q[1];
+        cu1(pi/3) q[0],q[1]; swap q[1],q[2]; ccx q[0],q[1],q[2];
+        measure q -> c;
+        """
+        emitted = emit_braket(parse_qasm(source)).splitlines()
+        for expected in (
+            "h q[0];",
+            "x q[0];",
+            "s q[0];",
+            "sdg q[0];",
+            "t q[0];",
+            "tdg q[0];",
+            "ry(pi/2) q[0];",
+            "rz(-pi/4) q[0];",
+            "cnot q[0], q[1];",
+            "cp(pi/3) q[0], q[1];",
+            "swap q[1], q[2];",
+            "ccx q[0], q[1], q[2];",
+        ):
+            self.assertIn(expected, emitted)
 
 
 if __name__ == "__main__":

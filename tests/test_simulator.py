@@ -16,7 +16,7 @@ measure q -> c;
 
 class SimulatorTests(unittest.TestCase):
     def test_supported_targets_pass_bell_schema_and_fidelity(self):
-        for target in ("spinq", "originq"):
+        for target in adapter.SUPPORTED_TARGETS:
             with self.subTest(target=target):
                 result = adapter.run(
                     qasm("h q[0];\ncx q[0],q[1];", 2), target, 8192

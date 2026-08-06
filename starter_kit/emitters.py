@@ -21,6 +21,11 @@ _ORIGIN_GATE_NAMES = {
     "ccx": "TOFFOLI",
 }
 
+_BRAKET_GATE_NAMES = {
+    "cx": "cnot",
+    "cu1": "cp",
+}
+
 
 def emit_spinq(circuit: Circuit) -> str:
     """Emit a complete OpenQASM 2.0 program for SpinQ."""
@@ -55,6 +60,27 @@ def emit_originq(circuit: Circuit) -> str:
         lines.append(f"{name}{parameter} {operands}")
     lines.extend(
         f"MEASURE q[{measurement.qubit}], c[{measurement.cbit}]"
+        for measurement in circuit.measurements
+    )
+    return "\n".join(lines) + "\n"
+
+
+def emit_braket(circuit: Circuit) -> str:
+    """Emit complete OpenQASM 3.0 for the Braket target."""
+
+    lines = [
+        "OPENQASM 3.0;",
+        'include "stdgates.inc";',
+        f"qubit[{circuit.qubit_count}] q;",
+        f"bit[{circuit.cbit_count}] c;",
+    ]
+    for operation in circuit.operations:
+        name = _BRAKET_GATE_NAMES.get(operation.name, operation.name)
+        parameter = f"({operation.parameter})" if operation.parameter else ""
+        operands = ", ".join(f"q[{qubit}]" for qubit in operation.qubits)
+        lines.append(f"{name}{parameter} {operands};")
+    lines.extend(
+        f"c[{measurement.cbit}] = measure q[{measurement.qubit}];"
         for measurement in circuit.measurements
     )
     return "\n".join(lines) + "\n"
