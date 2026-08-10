@@ -90,6 +90,15 @@ def _spinq_python() -> str:
 def run_spinq(circuit: Circuit, native_ir: str, shots: int) -> dict:
     """Execute the shared Circuit IR on SpinQit's Taurus local simulator."""
 
+    python = _spinq_python()
+    environment = os.environ.copy()
+    site_package = Path(python).parent.parent / "lib/python3.10/site-packages/spinqit"
+    for variable in ("DYLD_LIBRARY_PATH", "LD_LIBRARY_PATH"):
+        current = environment.get(variable)
+        environment[variable] = os.pathsep.join(
+            value for value in (str(site_package), current) if value
+        )
+
     payload = {
         "qubit_count": circuit.qubit_count,
         "shots": shots,
@@ -109,12 +118,13 @@ def run_spinq(circuit: Circuit, native_ir: str, shots: int) -> dict:
     worker = Path(__file__).with_name("spinqit_worker.py")
     try:
         completed = subprocess.run(
-            [_spinq_python(), str(worker)],
+            [python, str(worker)],
             input=json.dumps(payload),
             text=True,
             capture_output=True,
             check=True,
             timeout=120,
+            env=environment,
         )
         response = json.loads(completed.stdout)
     except subprocess.CalledProcessError as exc:

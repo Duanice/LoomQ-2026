@@ -1,10 +1,12 @@
 from importlib.util import find_spec
+import json
 import os
 import unittest
+from unittest import mock
 
 from starter_kit import adapter
 from starter_kit.evaluator import calculate_hellinger_fidelity, validate_schema
-from starter_kit.platform_runners import _spinq_counts
+from starter_kit.platform_runners import _spinq_counts, run_spinq
 from starter_kit.qasm_parser import Circuit, Measurement
 
 
@@ -122,6 +124,30 @@ class SimulatorTests(unittest.TestCase):
             measurements=(Measurement(0, 1), Measurement(1, 0)),
         )
         self.assertEqual(_spinq_counts({"10": 128}, circuit), {"10": 128})
+
+    @mock.patch("starter_kit.platform_runners._spinq_python")
+    @mock.patch("starter_kit.platform_runners.subprocess.run")
+    def test_spinq_worker_receives_native_library_paths(self, execute, python):
+        python.return_value = "/tmp/spinq-runtime/bin/python"
+        execute.return_value.stdout = json.dumps(
+            {"counts": {"0": 8}, "sdk_version": "0.2.4"}
+        )
+        circuit = Circuit(1, 1, (), (Measurement(0, 0),))
+
+        with mock.patch.dict(
+            os.environ,
+            {"DYLD_LIBRARY_PATH": "/existing/dyld", "LD_LIBRARY_PATH": "/existing/ld"},
+        ):
+            run_spinq(circuit, "native-ir", 8)
+
+        environment = execute.call_args.kwargs["env"]
+        expected = "/tmp/spinq-runtime/lib/python3.10/site-packages/spinqit"
+        self.assertEqual(
+            environment["DYLD_LIBRARY_PATH"], f"{expected}{os.pathsep}/existing/dyld"
+        )
+        self.assertEqual(
+            environment["LD_LIBRARY_PATH"], f"{expected}{os.pathsep}/existing/ld"
+        )
 
 
 if __name__ == "__main__":
