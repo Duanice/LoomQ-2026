@@ -15,6 +15,7 @@ starter_kit/
 ├── platform_runners.py
 ├── spinqit_worker.py
 ├── originq_cloud_worker.py
+├── hybrid_compiler.py
 ├── llm_client.py
 ├── l2_policy.json
 ├── evaluator.py
@@ -148,6 +149,37 @@ def compile_hybrid(hybrid_qasm_str: str) -> tuple[list, str]: ...
 ```
 
 未参赛的 Level 保持 `NotImplementedError`，并在 `submission.yaml` 中标为 `false`。Starter Kit 原样运行会失败，这是预期行为，也确保原样提交不会获得功能分。
+
+## L3 Hybrid-QASM 编译器
+
+`compile_hybrid()` 先移除并解析唯一的 `classical { ... }` 块，同时按原始顺序
+保留块前后的量子门与测量语句。经典部分使用 tokenizer、递归下降 parser 和 AST，
+再编译为官方模拟器支持的 `li/add/sub/addi/beq/bne/j` 指令：
+
+量子操作返回值固定为 `list[str]`：每个元素是一条以分号结尾的完整 OpenQASM 2.0
+门或测量语句；保持源码顺序，不包含头部、寄存器声明或 `classical` 内容。
+
+```text
+Hybrid-QASM
+  ├─ 量子语句 → list[str]
+  └─ classical → tokenizer → AST → RISC-V
+                                  ├─ r1..r9 → x1..x9
+                                  └─ c[k]   → x10+k
+```
+
+编译器支持整数字面量、负数、寄存器和测量位、括号、`+ - == !=`、顺序赋值与
+嵌套 `if/else`。分支标签全局唯一，临时寄存器在离开表达式前清零。执行公开测试：
+
+```bash
+# 在 fork 根目录执行
+python3 starter_kit/evaluator.py --level l3
+python3 -m unittest tests.test_hybrid_compiler -v
+
+# 更强的随机隐藏集防御测试
+python3 starter_kit/l3_defense.py \
+  --seed 17001 --programs 1000 --max-cbits 5 --max-depth 5 \
+  --json-out starter_kit/l3-defense-report.json
+```
 
 ## 公开自测
 

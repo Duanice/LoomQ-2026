@@ -16,5 +16,5 @@ RUN python -m venv /opt/loomq-spinqit \
 ENV LOOMQ_SPINQIT_PYTHON=/opt/loomq-spinqit/bin/python
 COPY . .
 
-CMD ["python", "evaluator.py", "--level", "l1", "--target", "spinq,originq,braket", \
+CMD ["python", "evaluator.py", "--target", "spinq,originq,braket", \
     "--json-out", "/tmp/loomq-public-report.json"]
