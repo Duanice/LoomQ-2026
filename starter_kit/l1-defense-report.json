@@ -26,12 +26,12 @@
     },
     "originq": {
       "passed": 106,
-      "minimum_fidelity": 0.973988,
+      "minimum_fidelity": 0.979679,
       "worst_case": "random:q=5:i=19:d=26:seed=1537441140"
     },
     "braket": {
       "passed": 106,
-      "minimum_fidelity": 0.97564,
+      "minimum_fidelity": 0.977666,
       "worst_case": "random:q=5:i=19:d=26:seed=1537441140"
     }
   },

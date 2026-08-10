@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 
 from starter_kit import adapter
 from starter_kit.emitters import emit_braket, emit_originq, emit_spinq
@@ -44,6 +45,24 @@ class QasmParserTests(unittest.TestCase):
             (Operation("ry", (0,), "pi/2"), Operation("ccx", (0, 1, 2))),
         )
         self.assertEqual(circuit.measurements, (Measurement(2, 0),))
+
+    def test_parses_nested_angle_parentheses(self):
+        source = BELL_QASM.replace("h q[0]", "rz(pi/(2+2)) q[0]")
+        circuit = parse_qasm(source)
+
+        self.assertEqual(circuit.operations[0], Operation("rz", (0,), "pi/(2+2)"))
+        for target in adapter.SUPPORTED_TARGETS:
+            with self.subTest(target=target):
+                self.assertIn("pi/(2+2)", adapter.transpile(source, target))
+
+    @mock.patch("starter_kit.adapter.run_spinq")
+    @mock.patch("starter_kit.adapter.parse_qasm", wraps=parse_qasm)
+    def test_run_parses_qasm_once(self, parser, runner):
+        runner.return_value = {"counts": {"00": 1}}
+
+        adapter.run(BELL_QASM, "spinq", 1)
+
+        parser.assert_called_once_with(BELL_QASM)
 
     def test_rejects_out_of_range_qubit(self):
         with self.assertRaisesRegex(ValueError, "量子比特越界"):

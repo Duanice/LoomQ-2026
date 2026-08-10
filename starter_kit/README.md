@@ -73,6 +73,30 @@ SpinQit 0.2.4 固定依赖 `antlr4-python3-runtime==4.9.2`，Braket 本地模拟
 如需在非 Docker 环境运行，可把 `LOOMQ_SPINQIT_PYTHON` 指向等价的 Python
 3.10 虚拟环境。
 
+## 统一 L1 架构
+
+三平台共享同一个 OpenQASM 2.0 解析器和不可变 `Circuit` 中间表示。目标分支只
+负责必要的代码生成、SDK 调用与位序归一化，不会根据电路名称或公开样例返回预制
+结果：
+
+```text
+OpenQASM 2.0 → parse_qasm() → Circuit IR
+                                  ├─ emit_spinq()   → OpenQASM 2.0
+                                  ├─ emit_originq() → OriginIR
+                                  ├─ emit_braket()  → OpenQASM 3.0
+                                  ├─ run_spinq()    → SpinQit BasicSimulator
+                                  ├─ run_originq()  → PyQPanda CPUQVM
+                                  └─ run_braket()   → Braket LocalSimulator
+                                                     ↓
+                                      统一 counts 与 little bit order
+```
+
+`transpile()` 的输出严格遵循 `target_ir_contract.md`；执行路径则从同一个
+`Circuit` 构造各 SDK 接受的对象或具体方言。例如 PyQPanda 接受的 OriginIR
+写法与评分契约略有差异，因此规范 emitter 和运行时 emitter 分开，但二者没有
+各自重新解析输入。SpinQit worker 仅用于隔离冲突的 ANTLR 依赖。`simulator.py`
+只用于本地差分测试和 L2 自验，生产 `run()` 的 counts 全部来自对应平台 SDK。
+
 ## 真机证据
 
 真机脚本同样从 OpenQASM 解析为共享 `Circuit` IR，但不会改变自动评测使用的

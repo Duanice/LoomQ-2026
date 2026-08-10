@@ -44,11 +44,7 @@ GATES = {
 IDENTIFIER = r"[A-Za-z_][A-Za-z0-9_]*"
 QREG_RE = re.compile(rf"qreg\s+({IDENTIFIER})\[(\d+)]")
 CREG_RE = re.compile(rf"creg\s+({IDENTIFIER})\[(\d+)]")
-GATE_RE = re.compile(
-    r"(?P<name>[a-z][a-z0-9]*)"
-    r"(?:\s*\((?P<parameter>[^()]*)\))?"
-    r"\s+(?P<operands>.+)"
-)
+GATE_RE = re.compile(r"(?P<name>[a-z][a-z0-9]*)(?P<tail>.*)", re.DOTALL)
 QUBIT_RE = re.compile(rf"({IDENTIFIER})\[(\d+)]")
 BIT_MEASURE_RE = re.compile(
     rf"measure\s+({IDENTIFIER})\[(\d+)]\s*->\s*({IDENTIFIER})\[(\d+)]"
@@ -79,12 +75,24 @@ def _parse_gate(
     if name not in GATES:
         raise ValueError(f"不支持的门: {name}")
 
-    parameter = match.group("parameter")
-    if parameter is not None:
-        parameter = parameter.strip()
+    tail = match.group("tail").lstrip()
+    parameter = None
+    if tail.startswith("("):
+        depth = 0
+        for index, character in enumerate(tail):
+            if character == "(":
+                depth += 1
+            elif character == ")":
+                depth -= 1
+                if depth == 0:
+                    parameter = tail[1:index].strip()
+                    tail = tail[index + 1 :].strip()
+                    break
+        else:
+            raise ValueError(f"参数括号不匹配: {statement!r}")
 
     qubits = []
-    for operand in match.group("operands").split(","):
+    for operand in tail.split(","):
         qubit = QUBIT_RE.fullmatch(operand.strip())
         if not qubit or qubit.group(1) != qreg_name:
             raise ValueError(f"非法量子比特: {operand.strip()!r}")

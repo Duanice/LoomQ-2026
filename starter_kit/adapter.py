@@ -10,14 +10,22 @@ from typing import Any, Dict, List, Tuple
 try:
     from .emitters import emit_braket, emit_originq, emit_spinq
     from .platform_runners import run_braket, run_originq, run_spinq
-    from .qasm_parser import parse_qasm
+    from .qasm_parser import Circuit, parse_qasm
 except ImportError:  # Support `python starter_kit/evaluator.py`.
     from emitters import emit_braket, emit_originq, emit_spinq
     from platform_runners import run_braket, run_originq, run_spinq
-    from qasm_parser import parse_qasm
+    from qasm_parser import Circuit, parse_qasm
 
 
 SUPPORTED_TARGETS = ("spinq", "originq", "braket")
+
+
+def _emit(circuit: Circuit, target: str) -> str:
+    if target == "spinq":
+        return emit_spinq(circuit)
+    if target == "originq":
+        return emit_originq(circuit)
+    return emit_braket(circuit)
 
 
 def transpile(qasm_str: str, target: str) -> str:
@@ -25,12 +33,7 @@ def transpile(qasm_str: str, target: str) -> str:
     if target not in SUPPORTED_TARGETS:
         raise ValueError(f"Unsupported target: {target}")
 
-    circuit = parse_qasm(qasm_str)
-    if target == "spinq":
-        return emit_spinq(circuit)
-    if target == "originq":
-        return emit_originq(circuit)
-    return emit_braket(circuit)
+    return _emit(parse_qasm(qasm_str), target)
 
 
 def run(qasm_str: str, target: str, shots: int) -> Dict[str, Any]:
@@ -40,8 +43,8 @@ def run(qasm_str: str, target: str, shots: int) -> Dict[str, Any]:
     if target not in SUPPORTED_TARGETS:
         raise ValueError(f"Unsupported target: {target}")
 
-    native_ir = transpile(qasm_str, target)
     circuit = parse_qasm(qasm_str)
+    native_ir = _emit(circuit, target)
     if target == "spinq":
         return run_spinq(circuit, native_ir, shots)
     if target == "originq":

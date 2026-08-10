@@ -21,13 +21,13 @@
 ```text
 平台名称：量旋云 2Qubit 核磁量子计算机（gemini_vp）
 平台 job ID：G-260810-0005
-运行时间：2026-08-10T05:20:23.977031Z
+运行时间：2026-08-10T06:51:08.443204Z
 shots：1024
 实际执行的 QASM：starter_kit/circuits/bell.qasm
 平台返回的原始结果：starter_kit/evidence/files/spinq-raw-result.json
 统一结果：starter_kit/evidence/files/spinq-result.json
 提交回执：starter_kit/evidence/files/spinq-submission.json
-任务页截图：待补充（截图为选填项）
+SDK 查询截图：starter_kit/evidence/files/spinq-sdk-task-G-260810-0005.png
 ```
 
 ```text
@@ -39,7 +39,7 @@ shots：1024
 平台返回的原始结果：starter_kit/evidence/files/originq-raw-result.json
 统一结果：starter_kit/evidence/files/originq-result.json
 提交回执：starter_kit/evidence/files/originq-submission.json
-任务页截图：待补充（截图为选填项）
+任务页截图：starter_kit/evidence/files/originq-task-F016831B161D5F48125A7DAAA50DB335.png
 ```
 
 建议把文件放进 `evidence/files/`，比如：
