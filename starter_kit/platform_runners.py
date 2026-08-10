@@ -1,9 +1,14 @@
-"""Local simulator drivers for the OriginQ and AWS Braket targets."""
+"""Local simulator drivers for the SpinQ, OriginQ, and AWS Braket targets."""
 
 from collections import Counter
 from datetime import datetime, timezone
 import hashlib
 from importlib.metadata import version
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
 
 try:
     from .qasm_parser import Circuit
@@ -41,6 +46,97 @@ _BRAKET_METHOD_NAMES = {
 
 def _timestamp() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _spinq_counts(raw_counts: dict, circuit: Circuit) -> dict[str, int]:
+    """Map SpinQit's q[0]..q[n-1] strings to c[n-1]..c[0]."""
+
+    counts = Counter()
+    for raw_key, count in raw_counts.items():
+        if isinstance(raw_key, int):
+            bits = format(raw_key, f"0{circuit.qubit_count}b")
+        else:
+            bits = str(raw_key).replace(" ", "")
+        if len(bits) != circuit.qubit_count or set(bits) - {"0", "1"}:
+            raise ValueError(f"Unsupported SpinQit count key: {raw_key!r}")
+
+        classical = [0] * circuit.cbit_count
+        for measurement in circuit.measurements:
+            classical[measurement.cbit] = int(bits[measurement.qubit])
+        key = "".join(str(bit) for bit in reversed(classical))
+        counts[key] += int(count)
+    return dict(sorted(counts.items()))
+
+
+def _spinq_python() -> str:
+    configured = os.environ.get("LOOMQ_SPINQIT_PYTHON")
+    candidates = [configured] if configured else []
+    candidates.extend(("/opt/loomq-spinqit/bin/python", sys.executable))
+    for candidate in candidates:
+        if candidate and Path(candidate).is_file():
+            if candidate != sys.executable:
+                return candidate
+            try:
+                __import__("spinqit")
+            except ImportError:
+                continue
+            return candidate
+    raise RuntimeError(
+        "spinqit==0.2.4 runtime is required for target: spinq; "
+        "build with starter_kit/Dockerfile or set LOOMQ_SPINQIT_PYTHON"
+    )
+
+
+def run_spinq(circuit: Circuit, native_ir: str, shots: int) -> dict:
+    """Execute the shared Circuit IR on SpinQit's Taurus local simulator."""
+
+    payload = {
+        "qubit_count": circuit.qubit_count,
+        "shots": shots,
+        "operations": [
+            {
+                "name": operation.name,
+                "qubits": operation.qubits,
+                "parameter": (
+                    evaluate_angle(operation.parameter)
+                    if operation.parameter is not None
+                    else None
+                ),
+            }
+            for operation in circuit.operations
+        ],
+    }
+    worker = Path(__file__).with_name("spinqit_worker.py")
+    try:
+        completed = subprocess.run(
+            [_spinq_python(), str(worker)],
+            input=json.dumps(payload),
+            text=True,
+            capture_output=True,
+            check=True,
+            timeout=120,
+        )
+        response = json.loads(completed.stdout)
+    except subprocess.CalledProcessError as exc:
+        reason = exc.stderr.strip() or exc.stdout.strip() or "unknown worker error"
+        raise RuntimeError(f"SpinQit simulator failed: {reason}") from exc
+    except (json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise RuntimeError("SpinQit simulator returned an invalid result") from exc
+
+    digest = hashlib.sha256(native_ir.encode("utf-8")).hexdigest()[:16]
+    return {
+        "backend": "spinq_taurus_simulator",
+        "job_id": f"spinq-local-{digest}",
+        "shots": shots,
+        "counts": _spinq_counts(response["counts"], circuit),
+        "bit_order": "little",
+        "timestamp": _timestamp(),
+        "meta": {
+            "engine": "spinqit_basic_simulator",
+            "sdk_version": response["sdk_version"],
+            "transpiled_gates": len(circuit.operations),
+        },
+    }
 
 
 def _origin_runtime_ir(circuit: Circuit) -> str:

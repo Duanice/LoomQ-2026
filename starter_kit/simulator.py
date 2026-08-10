@@ -142,6 +142,19 @@ def simulate(circuit: Circuit) -> list[complex]:
     return state
 
 
+def result_probabilities(circuit: Circuit) -> dict[str, float]:
+    """Return exact probabilities using the competition's classical bit order."""
+
+    probabilities = Counter()
+    for basis_state, amplitude in enumerate(simulate(circuit)):
+        classical = [0] * circuit.cbit_count
+        for measurement in circuit.measurements:
+            classical[measurement.cbit] = (basis_state >> measurement.qubit) & 1
+        key = "".join(str(bit) for bit in reversed(classical))
+        probabilities[key] += abs(amplitude) ** 2
+    return dict(sorted(probabilities.items()))
+
+
 def sample_counts(circuit: Circuit, shots: int, seed: int) -> dict[str, int]:
     state = simulate(circuit)
     basis_states = random.Random(seed).choices(

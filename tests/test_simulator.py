@@ -1,8 +1,11 @@
 from importlib.util import find_spec
+import os
 import unittest
 
 from starter_kit import adapter
 from starter_kit.evaluator import calculate_hellinger_fidelity, validate_schema
+from starter_kit.platform_runners import _spinq_counts
+from starter_kit.qasm_parser import Circuit, Measurement
 
 
 def qasm(body: str, qubits: int = 1) -> str:
@@ -16,7 +19,12 @@ measure q -> c;
 
 
 def available_targets() -> tuple[str, ...]:
-    targets = ["spinq"]
+    spinq_python = os.environ.get(
+        "LOOMQ_SPINQIT_PYTHON", "/opt/loomq-spinqit/bin/python"
+    )
+    targets = []
+    if os.path.isfile(spinq_python) or find_spec("spinqit") is not None:
+        targets.append("spinq")
     if find_spec("pyqpanda") is not None:
         targets.append("originq")
     if find_spec("braket") is not None:
@@ -27,7 +35,7 @@ def available_targets() -> tuple[str, ...]:
 class SimulatorTests(unittest.TestCase):
     def test_supported_targets_pass_bell_schema_and_fidelity(self):
         expected_backends = {
-            "spinq": "spinq_builtin_simulator",
+            "spinq": "spinq_taurus_simulator",
             "originq": "originq_local_simulator",
             "braket": "braket_local_simulator",
         }
@@ -105,6 +113,15 @@ class SimulatorTests(unittest.TestCase):
     def test_rejects_invalid_shots(self):
         with self.assertRaisesRegex(ValueError, "shots must be a positive integer"):
             adapter.run(qasm("x q[0];"), "spinq", 0)
+
+    def test_spinq_counts_are_mapped_to_classical_little_endian_order(self):
+        circuit = Circuit(
+            qubit_count=2,
+            cbit_count=2,
+            operations=(),
+            measurements=(Measurement(0, 1), Measurement(1, 0)),
+        )
+        self.assertEqual(_spinq_counts({"10": 128}, circuit), {"10": 128})
 
 
 if __name__ == "__main__":

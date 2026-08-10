@@ -1,0 +1,7 @@
+{
+  "job_id": "F016831B161D5F48125A7DAAA50DB335",
+  "status": "WAITING",
+  "platform": "WK_C180",
+  "shots": 1024,
+  "sdk_version": "0.4.0"
+}

@@ -1,0 +1,39 @@
+{
+  "seed": 20260825,
+  "shots": 8192,
+  "cases": 106,
+  "executions": 318,
+  "transpile_validations": 318,
+  "gate_coverage": [
+    "ccx",
+    "cu1",
+    "cx",
+    "h",
+    "ry",
+    "rz",
+    "s",
+    "sdg",
+    "swap",
+    "t",
+    "tdg",
+    "x"
+  ],
+  "targets": {
+    "spinq": {
+      "passed": 106,
+      "minimum_fidelity": 0.986746,
+      "worst_case": "random:q=5:i=19:d=26:seed=1537441140"
+    },
+    "originq": {
+      "passed": 106,
+      "minimum_fidelity": 0.974679,
+      "worst_case": "random:q=5:i=19:d=26:seed=1537441140"
+    },
+    "braket": {
+      "passed": 106,
+      "minimum_fidelity": 0.973011,
+      "worst_case": "random:q=5:i=19:d=26:seed=1537441140"
+    }
+  },
+  "failures": []
+}

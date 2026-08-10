@@ -11,6 +11,10 @@ starter_kit/
 ├── CHANGELOG.md
 ├── submission.yaml
 ├── adapter.py
+├── hardware_runner.py
+├── platform_runners.py
+├── spinqit_worker.py
+├── originq_cloud_worker.py
 ├── llm_client.py
 ├── l2_policy.json
 ├── evaluator.py
@@ -22,6 +26,8 @@ starter_kit/
 ├── gate_identities.md
 ├── target_ir_contract.md
 ├── requirements.txt
+├── requirements-spinq.txt
+├── requirements-originq-cloud.txt
 ├── Dockerfile
 ├── evidence/
 │   ├── README.md
@@ -60,6 +66,45 @@ docker run --rm loomq-submission
 `pyqpanda` 的 Linux wheel 是 x86_64；Apple Silicon Mac 也应使用上述
 `--platform linux/amd64` 参数构建。
 
+SpinQit 0.2.4 固定依赖 `antlr4-python3-runtime==4.9.2`，Braket 本地模拟器
+固定依赖 4.13.2，不能安全安装在同一个 Python 环境。Dockerfile 因此将
+`requirements-spinq.txt` 精确安装到 `/opt/loomq-spinqit`，并由
+`run_spinq()` 调用隔离 worker；这仍然使用同一个 QASM parser 和 Circuit IR。
+如需在非 Docker 环境运行，可把 `LOOMQ_SPINQIT_PYTHON` 指向等价的 Python
+3.10 虚拟环境。
+
+## 真机证据
+
+真机脚本同样从 OpenQASM 解析为共享 `Circuit` IR，但不会改变自动评测使用的
+本地模拟器默认路径。SpinQit 需要 Python 3.10，本源云使用独立的 QPanda3：
+
+```bash
+python3.10 -m venv ~/.cache/loomq/spinqit-0.2.4
+~/.cache/loomq/spinqit-0.2.4/bin/pip install spinqit==0.2.4
+
+python3.12 -m venv ~/.cache/loomq/pyqpanda3-0.4.0
+~/.cache/loomq/pyqpanda3-0.4.0/bin/pip install -r requirements-originq-cloud.txt
+```
+
+不带 `--submit` 只做登录和真机可用性检查，不消耗额度：
+
+```bash
+python3 examples/run_spinq_hardware.py --username <SPINQ_USERNAME>
+python3 examples/run_originq_hardware.py
+```
+
+确认后添加 `--submit`，提交一个 1024-shot Bell 真机任务。脚本会隐藏输入本源
+API Key，并把 task/job ID、原始结果和统一结果写入 `evidence/files/`：
+
+```bash
+python3 examples/run_spinq_hardware.py --username <SPINQ_USERNAME> --submit
+python3 examples/run_originq_hardware.py --submit
+```
+
+也可使用 `LOOMQ_SPINQ_USERNAME`、`LOOMQ_ORIGINQ_API_KEY`、
+`LOOMQ_SPINQIT_PYTHON` 和 `LOOMQ_ORIGINQ_PYTHON` 环境变量。任何 API Key、
+Token 或私钥都不得放入仓库。
+
 ## Adapter 契约
 
 L1 必须实现：
@@ -91,6 +136,18 @@ python3 evaluator.py --level l1 --target spinq,originq,braket
 python3 evaluator.py --level l2
 python3 evaluator.py --level l3
 ```
+
+L1 隐藏题型防御测试会运行 GHZ-5、QFT-4、Grover-3、3 个固定深度随机电路，
+再为 1～5 比特各生成 20 个随机电路；每个电路同时检查三种目标 IR，并在三个
+真实本地 SDK 与参考状态向量之间比较保真度：
+
+```bash
+docker run --rm --platform linux/amd64 \
+  -v "$PWD:/out" loomq-submission \
+  python l1_defense.py --json-out /out/l1-defense-report.json
+```
+
+固定种子 `20260825` 的完整基线结果见 [`l1-defense-report.json`](l1-defense-report.json)。
 
 退出码：全部公开测试通过为 `0`，存在失败为 `1`。`report.json` 只表示公开契约自测结果，不是正式分数。
 

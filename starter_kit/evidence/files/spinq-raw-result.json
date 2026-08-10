@@ -1,0 +1,17 @@
+{
+  "status": 200,
+  "msg": "",
+  "taskStatus": "S",
+  "taskErrMsg": null,
+  "run": {
+    "realMatrix": null,
+    "imagMatrix": null,
+    "module": {
+      "00": 0.57155932,
+      "11": 0.31729855,
+      "01": 0.00698193,
+      "10": 0.1041602
+    }
+  },
+  "shots": 1024
+}
