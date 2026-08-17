@@ -56,6 +56,37 @@ python3 evaluator.py --level l1 --target spinq,originq --json-out report.json
 
 参赛项目使用第三方 SDK 时，必须把依赖写入 `requirements.txt` 并精确锁定版本，例如 `package==1.2.3`。不要提交 `package>=1.2`，正式评测不会替参赛队选择依赖版本。
 
+### 用 uv 管理本地开发环境（可选）
+
+仓库根目录提供 `pyproject.toml`，可用 [uv](https://docs.astral.sh/uv/) 一键创建 Python 3.10 环境：
+
+```bash
+uv sync                      # 仅核心工具（纯标准库）
+uv run python -m unittest discover -s tests
+```
+
+三家平台 SDK 作为可选 extra 按需安装：
+
+```bash
+uv sync --extra originq      # pyqpanda 3.8.5
+uv sync --extra braket       # amazon-braket-sdk 1.110.1（3.10 可用的最后一版）
+uv sync --extra spinq        # spinqit 0.2.4
+```
+
+`braket` 与 `spinq` **不能共存**：spinqit 钉死 `antlr4-python3-runtime==4.9.2`，
+而 braket 需要 `==4.13.2`。`pyproject.toml` 已把两者声明为 `tool.uv.conflicts`，
+安装时二选一即可，`originq` 与任意一方都能共存。
+
+macOS 安装 `spinq` 后需额外运行一次修复脚本（spinqit 的原生扩展只声明了
+Linux 风格的 `$ORIGIN` rpath，macOS dyld 无法解析，会导致 `import spinqit` 失败）：
+
+```bash
+uv run --extra spinq python scripts/fix_spinqit_macos.py
+```
+
+注意：`pyproject.toml` 仅用于本地开发便利。正式评测仍以 `starter-kit/requirements.txt`
+和 `Dockerfile` 为准，请务必同步维护 `requirements.txt`。
+
 也可以先验证基础容器：
 
 ```bash

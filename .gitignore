@@ -5,3 +5,8 @@
 **/.DStore
 __pycache__/
 *.py[cod]
+
+# uv / 虚拟环境
+.venv/
+.python-version
+*.egg-info/
