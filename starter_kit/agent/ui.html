@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LoomQ 量子助手</title>
+<style>
+/* Win98 皮肤：全部内联，零 CDN、零外部字体（评测环境不保证外网）。 */
+:root{
+  --face:#c0c0c0; --hi:#ffffff; --sh:#808080; --dk:#000000;
+  --title1:#000080; --title2:#1084d0; --field:#ffffff; --ok:#008000; --err:#a80000;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; padding:18px; background:#008080;
+  font-family:"MS Sans Serif",Tahoma,Geneva,Verdana,sans-serif; font-size:13px; color:#000;
+}
+/* 斜角边框：凸起与凹陷 */
+.out{border:2px solid; border-color:var(--hi) var(--dk) var(--dk) var(--hi)}
+.in{border:2px solid; border-color:var(--sh) var(--hi) var(--hi) var(--sh)}
+
+.window{max-width:860px; margin:0 auto; background:var(--face); padding:3px}
+.titlebar{
+  display:flex; align-items:center; gap:6px; padding:3px 4px; color:#fff; font-weight:bold;
+  background:linear-gradient(90deg,var(--title1),var(--title2));
+}
+.titlebar .t{flex:1}
+.tbtn{
+  width:18px; height:16px; background:var(--face); color:#000; font-size:10px; line-height:12px;
+  text-align:center; font-weight:bold; font-family:Tahoma,sans-serif;
+}
+.menubar{display:flex; gap:14px; padding:3px 6px; border-bottom:1px solid var(--sh)}
+.menubar span{padding:1px 4px}
+.menubar span u{text-decoration:underline}
+.body{padding:12px}
+
+fieldset{border:2px groove var(--hi); margin:0 0 12px; padding:10px}
+legend{padding:0 4px; font-weight:bold}
+label{display:block; margin-bottom:6px}
+
+textarea,input[type=text]{
+  width:100%; padding:4px; font-family:"Courier New",monospace; font-size:13px;
+  background:var(--field); border:2px solid; border-color:var(--sh) var(--hi) var(--hi) var(--sh);
+  resize:vertical;
+}
+textarea{min-height:64px}
+
+.row{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; align-items:center}
+button{
+  min-width:96px; padding:5px 12px; background:var(--face); font-family:inherit; font-size:13px;
+  border:2px solid; border-color:var(--hi) var(--dk) var(--dk) var(--hi); cursor:pointer;
+}
+button:active:not(:disabled){border-color:var(--sh) var(--hi) var(--hi) var(--sh); padding:6px 11px 4px 13px}
+button:disabled{color:var(--sh); text-shadow:1px 1px 0 var(--hi); cursor:default}
+button:focus-visible{outline:1px dotted #000; outline-offset:-5px}
+
+/* 进度条：方块填充 */
+.progress{height:20px; padding:2px; background:var(--face); display:none}
+.progress.on{display:block}
+.bar{height:100%; display:flex; gap:2px; overflow:hidden}
+.bar i{width:12px; flex:0 0 12px; background:var(--title1); animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:.35}}
+
+.steps{margin:10px 0 0; padding:0; list-style:none}
+.steps li{padding:2px 0}
+.steps li.ok::before{content:"\2713 "; color:var(--ok); font-weight:bold}
+.steps li.err::before{content:"\2717 "; color:var(--err); font-weight:bold}
+.steps li.run::before{content:"\00bb "; font-weight:bold}
+
+/* 选项卡 */
+.tabs{display:flex; gap:2px; margin-top:14px}
+.tab{
+  padding:4px 12px; background:var(--face); cursor:pointer;
+  border:2px solid; border-color:var(--hi) var(--dk) var(--dk) var(--hi); border-bottom:none;
+}
+.tab[aria-selected=true]{font-weight:bold; padding-bottom:6px; margin-bottom:-2px; position:relative; z-index:1}
+.panel{padding:10px; background:var(--field); min-height:180px; overflow:auto}
+.panel pre{margin:0; font-family:"Courier New",monospace; font-size:13px; white-space:pre}
+
+/* 结果柱状图 */
+.hist{display:flex; align-items:flex-end; gap:10px; height:130px; padding-top:6px}
+.hist .col{display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%}
+.hist .b{width:38px; background:var(--title2); border:1px solid var(--dk); min-height:2px}
+.hist .k{font-family:"Courier New",monospace; margin-top:3px}
+.hist .v{font-size:11px; color:#333}
+
+.status{margin-top:12px; padding:3px 6px; display:flex; gap:8px}
+.status .cell{padding:1px 6px}
+.status .cell:first-child{flex:1}
+.muted{color:#333}
+.err-text{color:var(--err)}
+.hint{margin:8px 0 0; padding:8px; background:#ffffe1; border:1px solid var(--dk)}
+</style>
+</head>
+<body>
+<div class="window out">
+  <div class="titlebar">
+    <span class="t">LoomQ 量子助手 — 用大白话造量子电路</span>
+    <span class="tbtn out" aria-hidden="true">_</span>
+    <span class="tbtn out" aria-hidden="true">□</span>
+    <span class="tbtn out" aria-hidden="true">✕</span>
+  </div>
+  <div class="menubar"><span><u>文</u>件</span><span><u>编</u>辑</span><span><u>查</u>看</span><span><u>帮</u>助</span></div>
+
+  <div class="body">
+    <fieldset>
+      <legend>想做什么？</legend>
+      <label for="prompt">用大白话说就行，不需要懂量子：</label>
+      <textarea id="prompt" placeholder="例如：让三个量子比特纠缠在一起"></textarea>
+      <div class="row">
+        <button id="go">开始构建</button>
+        <button id="demo">我不知道，给我例子</button>
+        <span id="hintline" class="muted"></span>
+      </div>
+      <div id="examples" class="hint" hidden>
+        <strong>试试这些：</strong>
+        <div class="row">
+          <button class="ex" data-p="让三个量子比特纠缠在一起">三比特纠缠</button>
+          <button class="ex" data-p="做一个贝尔态">贝尔态</button>
+          <button class="ex" data-p="我要跑 15 比特的电路，而且不想排队，选哪个平台？">选平台</button>
+        </div>
+      </div>
+    </fieldset>
+
+    <div id="progress" class="progress in"><div class="bar" id="bar"></div></div>
+    <ul id="steps" class="steps"></ul>
+
+    <div class="tabs" role="tablist">
+      <div class="tab out" role="tab" data-t="circuit" aria-selected="true" tabindex="0">电路图</div>
+      <div class="tab out" role="tab" data-t="result"  aria-selected="false" tabindex="0">运行结果</div>
+      <div class="tab out" role="tab" data-t="qasm"    aria-selected="false" tabindex="0">QASM</div>
+      <div class="tab out" role="tab" data-t="explain" aria-selected="false" tabindex="0">这是啥？</div>
+    </div>
+    <div class="panel in" id="panel"><span class="muted">还没有电路。上面说一句话，然后点「开始构建」。</span></div>
+
+    <div class="status">
+      <span class="cell in" id="status">就绪</span>
+      <span class="cell in" id="fid">保真度 —</span>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+let state = {circuit:"", result:null, qasm:"", explain:"", backend:null};
+
+function steps(items){
+  $("steps").innerHTML = items.map(s => `<li class="${s.k}">${s.t}</li>`).join("");
+}
+function busy(on){
+  $("progress").classList.toggle("on", on);
+  $("bar").innerHTML = on ? "<i></i>".repeat(14) : "";
+  $("go").disabled = on;
+  $("status").textContent = on ? "正在处理…" : "就绪";
+}
+function esc(s){ return String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+function histogram(probs){
+  const keys = Object.keys(probs).sort();
+  if(!keys.length) return '<span class="muted">没有结果。</span>';
+  const max = Math.max(...keys.map(k => probs[k]));
+  return '<div class="hist">' + keys.map(k => {
+    const h = Math.round((probs[k]/max) * 105) + 2;
+    return `<div class="col"><span class="v">${(probs[k]*100).toFixed(1)}%</span>`
+         + `<div class="b" style="height:${h}px"></div><span class="k">${esc(k)}</span></div>`;
+  }).join("") + "</div>";
+}
+
+function render(tab){
+  const p = $("panel");
+  if(tab === "circuit") p.innerHTML = state.circuit ? `<pre>${esc(state.circuit)}</pre>`
+      : '<span class="muted">还没有电路。</span>';
+  else if(tab === "result") p.innerHTML = state.result ? histogram(state.result)
+      : '<span class="muted">还没有运行结果。</span>';
+  else if(tab === "qasm") p.innerHTML = state.qasm ? `<pre>${esc(state.qasm)}</pre>`
+      : '<span class="muted">还没有 QASM。</span>';
+  else p.innerHTML = state.explain ? `<div>${esc(state.explain).replace(/\n/g,"<br>")}</div>`
+      : '<span class="muted">构建一个电路后，这里会用大白话解释它在做什么。</span>';
+}
+
+document.querySelectorAll(".tab").forEach(t => {
+  const pick = () => {
+    document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", String(x === t)));
+    render(t.dataset.t);
+  };
+  t.addEventListener("click", pick);
+  t.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); pick(); }});
+});
+
+$("demo").addEventListener("click", () => {
+  const box = $("examples");
+  box.hidden = !box.hidden;
+});
+document.querySelectorAll(".ex").forEach(b =>
+  b.addEventListener("click", () => { $("prompt").value = b.dataset.p; $("examples").hidden = true; $("go").focus(); }));
+
+$("prompt").addEventListener("keydown", e => {
+  if((e.ctrlKey || e.metaKey) && e.key === "Enter") build();
+});
+$("go").addEventListener("click", build);
+
+async function build(){
+  const prompt = $("prompt").value.trim();
+  if(!prompt){
+    steps([{k:"err", t:"先说一句你想做什么 —— 比如「让三个量子比特纠缠在一起」。"}]);
+    $("prompt").focus();
+    return;
+  }
+  busy(true);
+  steps([{k:"run", t:"正在理解你的意思…"}]);
+  try{
+    const res = await fetch("/api/build", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({prompt})
+    });
+    const data = await res.json();
+    if(data.kind === "backend"){
+      state = {circuit:"", result:null, qasm:"", explain:data.explain, backend:data.backend};
+      steps([{k:"ok", t:"听懂了：你在挑运行平台"}, {k:"ok", t:"已按官方后端能力表筛选"}]);
+      $("fid").textContent = "保真度 —";
+      document.querySelectorAll(".tab").forEach(x =>
+        x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
+      render("explain");
+    } else if(data.ok){
+      state = {circuit:data.diagram, result:data.probabilities, qasm:data.qasm, explain:data.explain, backend:null};
+      const list = [{k:"ok", t:`听懂了：${esc(data.intent)}`}, {k:"ok", t:"生成电路"}];
+      list.push(data.fidelity !== null
+        ? {k:"ok", t:`自检通过 —— 保真度 ${data.fidelity.toFixed(2)}`}
+        : {k:"ok", t:"语法自检通过"});
+      steps(list);
+      $("fid").textContent = data.fidelity !== null ? `保真度 ${data.fidelity.toFixed(2)}` : "保真度 —";
+      document.querySelectorAll(".tab").forEach(x =>
+        x.setAttribute("aria-selected", String(x.dataset.t === "circuit")));
+      render("circuit");
+    } else {
+      steps([{k:"err", t:esc(data.message)}]);
+      $("fid").textContent = "保真度 —";
+      if(data.qasm){ state.qasm = data.qasm; }
+    }
+  }catch(err){
+    steps([{k:"err", t:"连不上本地服务，请确认终端里的服务还在运行。"}]);
+  }finally{
+    busy(false);
+  }
+}
+render("circuit");
+</script>
+</body>
+</html>
