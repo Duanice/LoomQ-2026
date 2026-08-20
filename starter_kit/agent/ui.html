@@ -5,120 +5,196 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LoomQ 量子助手</title>
 <style>
-/* Win98 皮肤：全部内联，零 CDN、零外部字体（评测环境不保证外网）。 */
+/*
+ * Y2K UI manual adapter: the official palette and component geometry are
+ * mapped to this dependency-free page so the submission remains offline-safe.
+ * Source: https://github.com/MuhamadZafarSyah/y2k-ui (MIT)
+ */
 :root{
-  --face:#c0c0c0; --hi:#ffffff; --sh:#808080; --dk:#000000;
-  --title1:#000080; --title2:#1084d0; --field:#ffffff; --ok:#008000; --err:#a80000;
+  --y2k-ink:#1b1b3a; --y2k-ink-muted:#505266; --y2k-blue:#8ed1fc;
+  --y2k-pink:#ff8fcf; --y2k-lilac:#b69cff; --y2k-mint:#8ff0d0;
+  --y2k-lemon:#ffe45e; --y2k-panel:#d7dde8; --field:#ffffff;
+  --ok:#147a5c; --err:#b42345; --title2:var(--y2k-pink); --dk:var(--y2k-ink);
 }
 *{box-sizing:border-box}
-html,body{height:100%}
+html,body{min-height:100%}
 body{
-  margin:0; padding:18px; background:#008080;
-  font-family:"MS Sans Serif",Tahoma,Geneva,Verdana,sans-serif; font-size:13px; color:#000;
+  margin:0; padding:22px; color:var(--y2k-ink); font-size:14px;
+  font-family:"Trebuchet MS",Tahoma,Geneva,Verdana,sans-serif;
+  background-color:#f6f4ff;
+  background-image:
+    linear-gradient(90deg,rgba(182,156,255,.16) 1px,transparent 1px),
+    linear-gradient(rgba(142,209,252,.18) 1px,transparent 1px);
+  background-size:24px 24px;
 }
-/* 斜角边框：凸起与凹陷 */
-.out{border:2px solid; border-color:var(--hi) var(--dk) var(--dk) var(--hi)}
-.in{border:2px solid; border-color:var(--sh) var(--hi) var(--hi) var(--sh)}
+.out,.in{border:2px solid var(--y2k-ink)}
 
-.window{max-width:860px; margin:0 auto; background:var(--face); padding:3px}
+.window{
+  max-width:860px; margin:0 auto; padding:0; overflow:hidden; background:#fff;
+  border-radius:8px; box-shadow:6px 6px 0 var(--y2k-ink);
+}
 .titlebar{
-  display:flex; align-items:center; gap:6px; padding:3px 4px; color:#fff; font-weight:bold;
-  background:linear-gradient(90deg,var(--title1),var(--title2));
+  display:flex; align-items:center; gap:7px; padding:9px 11px; color:var(--y2k-ink);
+  background:var(--y2k-blue); border-bottom:2px solid var(--y2k-ink); font-weight:700;
 }
-.titlebar .t{flex:1}
+.titlebar .t{flex:1; letter-spacing:.01em}
 .tbtn{
-  width:18px; height:16px; background:var(--face); color:#000; font-size:10px; line-height:12px;
-  text-align:center; font-weight:bold; font-family:Tahoma,sans-serif;
+  display:inline-flex; width:20px; height:20px; align-items:center; justify-content:center;
+  border-radius:3px; background:#fff; color:var(--y2k-ink); font:700 11px/1 Tahoma,sans-serif;
 }
-.menubar{display:flex; gap:14px; padding:3px 6px; border-bottom:1px solid var(--sh)}
-.menubar span{padding:1px 4px}
-.menubar span u{text-decoration:underline}
-.body{padding:12px}
+.tbtn:nth-last-child(3){background:var(--y2k-lemon)}
+.tbtn:nth-last-child(2){background:var(--y2k-mint)}
+.tbtn:last-child{background:var(--y2k-pink)}
+.menubar{
+  display:flex; gap:16px; padding:7px 10px; background:var(--y2k-panel);
+  border-bottom:2px solid var(--y2k-ink); font-size:13px; font-weight:600;
+}
+.menubar span{padding:2px 4px; border-radius:3px}
+.menubar span:hover{background:var(--y2k-lilac)}
+.menubar span u{text-decoration:underline; text-underline-offset:2px}
+.body{padding:16px; background:#fdfcff}
 
-fieldset{border:2px groove var(--hi); margin:0 0 12px; padding:10px}
-legend{padding:0 4px; font-weight:bold}
-label{display:block; margin-bottom:6px}
+fieldset{
+  margin:0 0 14px; padding:13px; border:2px solid var(--y2k-ink);
+  border-radius:7px; background:#fff; box-shadow:3px 3px 0 var(--y2k-panel);
+}
+legend{
+  padding:3px 8px; border:2px solid var(--y2k-ink); border-radius:5px;
+  background:var(--y2k-lemon); font-weight:700;
+}
+label{display:block; margin:2px 0 8px; font-weight:600}
 
 textarea,input[type=text]{
-  width:100%; padding:4px; font-family:"Courier New",monospace; font-size:13px;
-  background:var(--field); border:2px solid; border-color:var(--sh) var(--hi) var(--hi) var(--sh);
-  resize:vertical;
+  width:100%; padding:10px 11px; color:var(--y2k-ink); background:var(--field);
+  border:2px solid var(--y2k-ink); border-radius:5px; outline:none; resize:vertical;
+  font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace;
+  transition:box-shadow .15s ease,background .15s ease;
 }
-textarea{min-height:64px}
+textarea{min-height:84px}
+textarea::placeholder,input[type=text]::placeholder{color:var(--y2k-ink-muted); opacity:.7}
+textarea:focus-visible,input[type=text]:focus-visible{box-shadow:0 0 0 3px rgba(255,143,207,.55)}
 
-.row{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; align-items:center}
+.row{display:flex; gap:9px; flex-wrap:wrap; margin-top:10px; align-items:center}
 button{
-  min-width:96px; padding:5px 12px; background:var(--face); font-family:inherit; font-size:13px;
-  border:2px solid; border-color:var(--hi) var(--dk) var(--dk) var(--hi); cursor:pointer;
+  min-width:96px; padding:8px 14px; color:var(--y2k-ink); background:var(--y2k-lemon);
+  border:2px solid var(--y2k-ink); border-radius:6px; cursor:pointer; user-select:none;
+  font:600 14px/1.2 inherit; transition:transform .1s ease,background .15s ease;
 }
-button:active:not(:disabled){border-color:var(--sh) var(--hi) var(--hi) var(--sh); padding:6px 11px 4px 13px}
-button:disabled{color:var(--sh); text-shadow:1px 1px 0 var(--hi); cursor:default}
-button:focus-visible{outline:1px dotted #000; outline-offset:-5px}
+#demo{background:var(--y2k-blue)}
+.ex{background:var(--y2k-pink)}
+.ex:nth-child(2n){background:var(--y2k-mint)}
+button:hover:not(:disabled){background:var(--y2k-lilac)}
+button:active:not(:disabled){transform:translateY(2px) scale(.98)}
+button:disabled{opacity:.48; cursor:not-allowed}
+button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px}
 
-/* 进度条：方块填充 */
-.progress{height:20px; padding:2px; background:var(--face); display:none}
+.progress{
+  display:none; height:22px; padding:3px; overflow:hidden; background:#fff;
+  border-radius:5px;
+}
 .progress.on{display:block}
-.bar{height:100%; display:flex; gap:2px; overflow:hidden}
-.bar i{width:12px; flex:0 0 12px; background:var(--title1); animation:blink 1s steps(1) infinite}
+.bar{display:flex; height:100%; gap:3px; overflow:hidden}
+.bar i{
+  width:13px; flex:0 0 13px; border:1px solid var(--y2k-ink); border-radius:2px;
+  background:var(--y2k-blue); animation:blink 1s steps(1) infinite;
+}
+.bar i:nth-child(2n){background:var(--y2k-pink)}
 @keyframes blink{50%{opacity:.35}}
 
-.steps{margin:10px 0 0; padding:0; list-style:none}
-.steps li{padding:2px 0}
-.steps li.ok::before{content:"\2713 "; color:var(--ok); font-weight:bold}
-.steps li.err::before{content:"\2717 "; color:var(--err); font-weight:bold}
-.steps li.run::before{content:"\00bb "; font-weight:bold}
+.steps{margin:11px 0 0; padding:0; list-style:none}
+.steps li{padding:3px 0; font-weight:600}
+.steps li.ok::before{content:"\2713 "; color:var(--ok); font-weight:800}
+.steps li.err::before{content:"\2717 "; color:var(--err); font-weight:800}
+.steps li.run::before{content:"\00bb "; color:var(--y2k-lilac); font-weight:800}
 
-/* 选项卡 */
-.tabs{display:flex; gap:2px; margin-top:14px}
-.tab{
-  padding:4px 12px; background:var(--face); cursor:pointer;
-  border:2px solid; border-color:var(--hi) var(--dk) var(--dk) var(--hi); border-bottom:none;
+/* Y2K UI tabs: a shared ink baseline with pastel triggers and a white panel. */
+.tabs{
+  display:flex; align-items:flex-end; gap:4px; margin-top:16px;
+  border-bottom:2px solid var(--y2k-ink);
 }
-.tab[aria-selected=true]{font-weight:bold; padding-bottom:6px; margin-bottom:-2px; position:relative; z-index:1}
-.panel{padding:10px; background:var(--field); min-height:260px; overflow:auto}
-.panel pre{margin:0; font-family:"Courier New",monospace; font-size:13px; white-space:pre}
+.tab{
+  margin-bottom:-2px; padding:7px 12px; color:var(--y2k-ink); background:var(--y2k-panel);
+  border:2px solid var(--y2k-ink); border-bottom:0; border-radius:5px 5px 0 0;
+  cursor:pointer; font-size:13px; font-weight:700; transition:background .15s ease;
+}
+.tab:hover{background:var(--y2k-lilac)}
+.tab:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px}
+.tab[aria-selected=true]{position:relative; z-index:1; padding-bottom:9px; background:var(--y2k-lemon)}
+.panel{
+  min-height:260px; padding:13px; overflow:auto; color:var(--y2k-ink); background:#fff;
+  border-top:0; border-radius:0 0 6px 6px;
+}
+.panel pre{
+  margin:0; white-space:pre; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace;
+}
 
-/* 结构化 SVG 电路图：保留复古外壳，电路本身使用标准量子门符号。 */
+/* 结构化 SVG 电路图：只换 Y2K UI 视觉令牌，量子门语义和交互保持不变。 */
 .circuit-scroll{min-width:max-content}
-.circuit-svg{display:block; width:auto; min-width:100%; height:auto; color:#111; background:var(--field)}
-.circuit-svg text{font-family:Tahoma,Geneva,Verdana,sans-serif; fill:#111; user-select:none}
-.circuit-svg .wire,.circuit-svg .connector{stroke:#222; stroke-width:2; fill:none}
+.circuit-svg{display:block; width:auto; min-width:100%; height:auto; color:var(--y2k-ink); background:#fff}
+.circuit-svg text{font-family:Tahoma,Geneva,Verdana,sans-serif; fill:var(--y2k-ink); user-select:none}
+.circuit-svg .wire,.circuit-svg .connector{stroke:var(--y2k-ink); stroke-width:2; fill:none}
 .circuit-svg .connector{stroke-width:2.5}
-.circuit-svg .box{fill:#f7f7f7; stroke:#111; stroke-width:2}
-.circuit-svg .control,.circuit-svg .target{fill:#111; stroke:#111; stroke-width:2}
+.circuit-svg .box{fill:#fff; stroke:var(--y2k-ink); stroke-width:2}
+.circuit-svg .control,.circuit-svg .target{fill:var(--y2k-ink); stroke:var(--y2k-ink); stroke-width:2}
 .circuit-svg .target{fill:#fff}
-.circuit-svg .target-line{stroke:#111; stroke-width:2}
-.circuit-svg .swap-line{stroke:#111; stroke-width:3}
+.circuit-svg .target-line{stroke:var(--y2k-ink); stroke-width:2}
+.circuit-svg .swap-line{stroke:var(--y2k-ink); stroke-width:3}
 .circuit-svg .gate{cursor:pointer}
 .circuit-svg .gate:hover .box,.circuit-svg .gate:focus .box,
-.circuit-svg .gate.selected .box{fill:#ffffd8; stroke:var(--title2); stroke-width:3}
+.circuit-svg .gate.selected .box{fill:var(--y2k-lemon); stroke:var(--y2k-pink); stroke-width:3}
 .circuit-svg .gate:hover .control,.circuit-svg .gate:focus .control,
-.circuit-svg .gate.selected .control{fill:var(--title2); stroke:var(--title2)}
+.circuit-svg .gate.selected .control{fill:var(--y2k-pink); stroke:var(--y2k-ink)}
 .circuit-svg .gate:focus{outline:none}
-.circuit-svg .step{font-size:11px; fill:#555; text-anchor:middle}
-.circuit-svg .qlabel{font:13px "Courier New",monospace; text-anchor:end}
-.circuit-svg .clabel{font:12px "Courier New",monospace}
+.circuit-svg .step{font-size:11px; fill:var(--y2k-ink-muted); text-anchor:middle}
+.circuit-svg .qlabel{font:13px ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace; text-anchor:end}
+.circuit-svg .clabel{font:12px ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace}
 .circuit-svg .gate-label{font-size:14px; font-weight:bold; text-anchor:middle; dominant-baseline:middle}
-.circuit-svg .param{font:10px "Courier New",monospace; text-anchor:middle}
-.circuit-svg .measure-title{font-size:11px; fill:#555; text-anchor:middle}
-.circuit-svg .meter{stroke:#111; stroke-width:1.7; fill:none}
-.circuit-detail{margin-top:8px; padding:6px 8px; min-height:29px; background:#ffffe1; border:1px solid #808080}
-.circuit-legend{margin-top:6px; color:#333; font-size:12px}
-.basis{margin-top:12px; padding:7px 8px; background:#ffffe1; border:1px solid #808080; font-size:12px}
+.circuit-svg .param{font:10px ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace; text-anchor:middle}
+.circuit-svg .measure-title{font-size:11px; fill:var(--y2k-ink-muted); text-anchor:middle}
+.circuit-svg .meter{stroke:var(--y2k-ink); stroke-width:1.7; fill:none}
+.circuit-detail,.basis{
+  margin-top:9px; padding:8px 10px; border:2px solid var(--y2k-ink); border-radius:5px;
+  background:rgba(143,240,208,.28);
+}
+.circuit-detail{min-height:34px}
+.circuit-legend{margin-top:7px; color:var(--y2k-ink-muted); font-size:12px}
+.basis{margin-top:12px; background:rgba(255,228,94,.35); font-size:12px}
 
 /* 结果柱状图 */
 .hist{display:flex; align-items:flex-end; gap:10px; height:130px; padding-top:6px}
 .hist .col{display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%}
-.hist .b{width:38px; background:var(--title2); border:1px solid var(--dk); min-height:2px}
-.hist .k{font-family:"Courier New",monospace; margin-top:3px}
-.hist .v{font-size:11px; color:#333}
+.hist .b{width:38px; min-height:2px; background:var(--y2k-blue); border:2px solid var(--y2k-ink); border-radius:3px 3px 0 0}
+.hist .col:nth-child(2n) .b{background:var(--y2k-pink)}
+.hist .k{margin-top:4px; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace}
+.hist .v{font-size:11px; color:var(--y2k-ink-muted)}
 
-.status{margin-top:12px; padding:3px 6px; display:flex; gap:8px}
-.status .cell{padding:1px 6px}
-.status .cell:first-child{flex:1}
-.muted{color:#333}
+.status{display:flex; gap:8px; margin-top:12px; padding:0}
+.status .cell{padding:6px 9px; border-radius:5px; background:var(--y2k-panel)}
+.status .cell:first-child{flex:1; background:rgba(142,209,252,.45)}
+.muted{color:var(--y2k-ink-muted)}
 .err-text{color:var(--err)}
-.hint{margin:8px 0 0; padding:8px; background:#ffffe1; border:1px solid var(--dk)}
+.hint{
+  margin:10px 0 0; padding:10px; background:rgba(255,143,207,.18);
+  border:2px solid var(--y2k-ink); border-radius:6px;
+}
+
+::-webkit-scrollbar{width:14px; height:14px}
+::-webkit-scrollbar-track{background:#fff; border:2px solid var(--y2k-ink); border-radius:4px}
+::-webkit-scrollbar-thumb{background:var(--y2k-blue); border:2px solid var(--y2k-ink); border-radius:4px; min-height:28px}
+::-webkit-scrollbar-thumb:hover{background:var(--y2k-pink)}
+::-webkit-scrollbar-corner{background:#fff}
+
+@media (max-width:640px){
+  body{padding:10px; background-size:18px 18px}
+  .body{padding:11px}
+  .window{box-shadow:4px 4px 0 var(--y2k-ink)}
+  .titlebar{padding:8px}
+  .titlebar .t{font-size:13px}
+  .tbtn{width:18px; height:18px}
+  .menubar{gap:7px; overflow:auto}
+  .tab{padding:7px 8px; font-size:12px}
+  .status{flex-direction:column}
+}
 </style>
 </head>
 <body>
