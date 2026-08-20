@@ -16,8 +16,17 @@ starter_kit/
 ├── spinqit_worker.py
 ├── originq_cloud_worker.py
 ├── hybrid_compiler.py
+├── agent/
+│   ├── core.py
+│   ├── prompts.py
+│   ├── verifier.py
+│   ├── backends.py
+│   ├── presenter.py
+│   ├── server.py
+│   └── ui.html
 ├── llm_client.py
 ├── l2_policy.json
+├── L2_DESIGN.md
 ├── evaluator.py
 ├── prepare_submission.py
 ├── riscv_emulator.py
@@ -85,7 +94,7 @@ Linux 风格的 `$ORIGIN` rpath，macOS dyld 无法解析，会导致 `import sp
 uv run --extra spinq python scripts/fix_spinqit_macos.py
 ```
 
-注意：`pyproject.toml` 仅用于本地开发便利。正式评测仍以 `starter-kit/requirements.txt`
+注意：`pyproject.toml` 仅用于本地开发便利。正式评测仍以 `starter_kit/requirements.txt`
 和 `Dockerfile` 为准，请务必同步维护 `requirements.txt`。
 
 也可以先验证基础容器：
@@ -276,6 +285,20 @@ export LOOMQ_LLM_MODEL=deepseek-v4-flash
 export LOOMQ_LLM_TIMEOUT_SECONDS=120
 python3 evaluator.py --level l2
 ```
+
+`agent_chat()` 先调用统一模型，把请求结构化为“生成/修复 QASM”“选择后端”
+或“量子概念讲解”。
+QASM 会复用 L1 parser 和状态向量模拟器自验，失败时把具体错误反馈给模型重试；
+后端选择则只让模型提取约束，再由 `backend_capabilities.json` 确定性筛选。
+完整结构与评分边界见 [`L2_DESIGN.md`](L2_DESIGN.md)。
+
+交互界面与同一个 `agent_chat()` 入口相连。配置模型环境变量后运行：
+
+```bash
+python3 -m starter_kit.agent.server --open
+```
+
+未配置模型时，界面只提示补齐环境变量，不使用关键词规则或硬编码答案模拟 Agent。
 
 缺少配置时应立即失败，错误信息不得包含任何 Key。正式评测时，组委会将统一注入 DeepSeek 模型服务及调用预算；评测环境不保证能够访问其他外部网络服务。若参加 L2，请把 `submission.yaml` 中的 `levels.l2` 与 `network.required_for_l2` 同时改为 `true`；`allowed_hosts` 不用于申请正式评测中的任意公网访问。
 

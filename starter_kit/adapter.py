@@ -54,8 +54,13 @@ def run(qasm_str: str, target: str, shots: int) -> Dict[str, Any]:
 
 
 def agent_chat(prompt: str) -> str:
-    """Optional L2 entry point using the documented LOOMQ_LLM_* environment."""
-    raise NotImplementedError("L2 is optional; implement agent_chat(prompt) to enter")
+    """Run the L2 model-backed agent with deterministic local verification."""
+    try:
+        from .agent.core import agent_chat as chat
+    except ImportError:  # Support `python starter_kit/evaluator.py`.
+        from agent.core import agent_chat as chat
+
+    return chat(prompt)
 
 
 def compile_hybrid(hybrid_qasm_str: str) -> Tuple[List[str], str]:

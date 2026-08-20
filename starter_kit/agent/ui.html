@@ -75,8 +75,36 @@ button:focus-visible{outline:1px dotted #000; outline-offset:-5px}
   border:2px solid; border-color:var(--hi) var(--dk) var(--dk) var(--hi); border-bottom:none;
 }
 .tab[aria-selected=true]{font-weight:bold; padding-bottom:6px; margin-bottom:-2px; position:relative; z-index:1}
-.panel{padding:10px; background:var(--field); min-height:180px; overflow:auto}
+.panel{padding:10px; background:var(--field); min-height:260px; overflow:auto}
 .panel pre{margin:0; font-family:"Courier New",monospace; font-size:13px; white-space:pre}
+
+/* 结构化 SVG 电路图：保留复古外壳，电路本身使用标准量子门符号。 */
+.circuit-scroll{min-width:max-content}
+.circuit-svg{display:block; width:auto; min-width:100%; height:auto; color:#111; background:var(--field)}
+.circuit-svg text{font-family:Tahoma,Geneva,Verdana,sans-serif; fill:#111; user-select:none}
+.circuit-svg .wire,.circuit-svg .connector{stroke:#222; stroke-width:2; fill:none}
+.circuit-svg .connector{stroke-width:2.5}
+.circuit-svg .box{fill:#f7f7f7; stroke:#111; stroke-width:2}
+.circuit-svg .control,.circuit-svg .target{fill:#111; stroke:#111; stroke-width:2}
+.circuit-svg .target{fill:#fff}
+.circuit-svg .target-line{stroke:#111; stroke-width:2}
+.circuit-svg .swap-line{stroke:#111; stroke-width:3}
+.circuit-svg .gate{cursor:pointer}
+.circuit-svg .gate:hover .box,.circuit-svg .gate:focus .box,
+.circuit-svg .gate.selected .box{fill:#ffffd8; stroke:var(--title2); stroke-width:3}
+.circuit-svg .gate:hover .control,.circuit-svg .gate:focus .control,
+.circuit-svg .gate.selected .control{fill:var(--title2); stroke:var(--title2)}
+.circuit-svg .gate:focus{outline:none}
+.circuit-svg .step{font-size:11px; fill:#555; text-anchor:middle}
+.circuit-svg .qlabel{font:13px "Courier New",monospace; text-anchor:end}
+.circuit-svg .clabel{font:12px "Courier New",monospace}
+.circuit-svg .gate-label{font-size:14px; font-weight:bold; text-anchor:middle; dominant-baseline:middle}
+.circuit-svg .param{font:10px "Courier New",monospace; text-anchor:middle}
+.circuit-svg .measure-title{font-size:11px; fill:#555; text-anchor:middle}
+.circuit-svg .meter{stroke:#111; stroke-width:1.7; fill:none}
+.circuit-detail{margin-top:8px; padding:6px 8px; min-height:29px; background:#ffffe1; border:1px solid #808080}
+.circuit-legend{margin-top:6px; color:#333; font-size:12px}
+.basis{margin-top:12px; padding:7px 8px; background:#ffffe1; border:1px solid #808080; font-size:12px}
 
 /* 结果柱状图 */
 .hist{display:flex; align-items:flex-end; gap:10px; height:130px; padding-top:6px}
@@ -110,7 +138,7 @@ button:focus-visible{outline:1px dotted #000; outline-offset:-5px}
       <textarea id="prompt" placeholder="例如：让三个量子比特纠缠在一起"></textarea>
       <div class="row">
         <button id="go">开始构建</button>
-        <button id="demo">我不知道，给我例子</button>
+        <button id="demo">我不知道问些什么</button>
         <span id="hintline" class="muted"></span>
       </div>
       <div id="examples" class="hint" hidden>
@@ -119,6 +147,7 @@ button:focus-visible{outline:1px dotted #000; outline-offset:-5px}
           <button class="ex" data-p="让三个量子比特纠缠在一起">三比特纠缠</button>
           <button class="ex" data-p="做一个贝尔态">贝尔态</button>
           <button class="ex" data-p="我要跑 15 比特的电路，而且不想排队，选哪个平台？">选平台</button>
+          <button class="ex" data-p="什么是量子纠缠？">认识量子纠缠</button>
         </div>
       </div>
     </fieldset>
@@ -144,7 +173,7 @@ button:focus-visible{outline:1px dotted #000; outline-offset:-5px}
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-let state = {circuit:"", result:null, qasm:"", explain:"", backend:null};
+let state = {diagram:"", circuitData:null, result:null, qasm:"", explain:"", backend:null, basis:null};
 
 function steps(items){
   $("steps").innerHTML = items.map(s => `<li class="${s.k}">${s.t}</li>`).join("");
@@ -156,6 +185,125 @@ function busy(on){
   $("status").textContent = on ? "正在处理…" : "就绪";
 }
 function esc(s){ return String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function escAttr(s){ return esc(s).replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+
+const GATE_LABEL = {
+  h:"H", x:"X", s:"S", sdg:"S†", t:"T", tdg:"T†", ry:"Ry", rz:"Rz",
+  cx:"CNOT", cu1:"CU1", swap:"SWAP", ccx:"Toffoli"
+};
+
+function shortParam(value){
+  const text = String(value || "").replace(/\s+/g, "");
+  return text.length > 11 ? text.slice(0, 10) + "…" : text;
+}
+
+function operationText(op, index){
+  const qubits = op.qubits.map(q => `q${q}`).join("、");
+  const parameter = op.parameter ? `，参数 ${op.parameter}` : "";
+  return `步骤 ${index + 1}：${GATE_LABEL[op.name] || op.name.toUpperCase()}，作用于 ${qubits}${parameter}`;
+}
+
+function targetMark(x, y){
+  return `<circle class="target" cx="${x}" cy="${y}" r="11"></circle>`
+    + `<line class="target-line" x1="${x-7}" y1="${y}" x2="${x+7}" y2="${y}"></line>`
+    + `<line class="target-line" x1="${x}" y1="${y-7}" x2="${x}" y2="${y+7}"></line>`;
+}
+
+function swapMark(x, y){
+  return `<line class="swap-line" x1="${x-8}" y1="${y-8}" x2="${x+8}" y2="${y+8}"></line>`
+    + `<line class="swap-line" x1="${x+8}" y1="${y-8}" x2="${x-8}" y2="${y+8}"></line>`;
+}
+
+function boxGate(x, y, label, parameter=""){
+  return `<rect class="box" x="${x-27}" y="${y-22}" width="54" height="44"></rect>`
+    + `<text class="gate-label" x="${x}" y="${parameter ? y-5 : y}">${esc(label)}</text>`
+    + (parameter ? `<text class="param" x="${x}" y="${y+13}">${esc(shortParam(parameter))}</text>` : "");
+}
+
+function circuitSvg(circuit){
+  const operations = circuit.operations || [];
+  const measurements = circuit.measurements || [];
+  const qubits = Math.max(1, circuit.qubit_count || 1);
+  const left = 64, top = 50, rowGap = 68, columnGap = 84;
+  const firstGateX = left + 56;
+  const measureX = firstGateX + operations.length * columnGap + 24;
+  const width = Math.max(620, measureX + 145);
+  const height = Math.max(190, top + (qubits - 1) * rowGap + 70);
+  const y = q => top + q * rowGap;
+  const parts = [
+    `<svg class="circuit-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="量子电路图">`,
+    `<defs><marker id="c-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#111"></path></marker></defs>`,
+    `<text class="measure-title" x="${measureX}" y="20">测量</text>`
+  ];
+
+  for(let q=0; q<qubits; q++){
+    parts.push(`<text class="qlabel" x="${left-12}" y="${y(q)+5}">q[${q}]</text>`);
+    parts.push(`<line class="wire" x1="${left}" y1="${y(q)}" x2="${width-42}" y2="${y(q)}"></line>`);
+  }
+
+  operations.forEach((op, index) => {
+    const x = firstGateX + index * columnGap;
+    const ys = op.qubits.map(y);
+    const title = operationText(op, index);
+    parts.push(`<g class="gate" data-step="${index}" tabindex="0" role="button" aria-label="${escAttr(title)}"><title>${esc(title)}</title>`);
+    parts.push(`<text class="step" x="${x}" y="20">${index+1}</text>`);
+    if(op.name === "cx"){
+      parts.push(`<line class="connector" x1="${x}" y1="${Math.min(...ys)}" x2="${x}" y2="${Math.max(...ys)}"></line>`);
+      parts.push(`<circle class="control" cx="${x}" cy="${ys[0]}" r="6"></circle>`);
+      parts.push(targetMark(x, ys[1]));
+    }else if(op.name === "cu1"){
+      parts.push(`<line class="connector" x1="${x}" y1="${Math.min(...ys)}" x2="${x}" y2="${Math.max(...ys)}"></line>`);
+      parts.push(`<circle class="control" cx="${x}" cy="${ys[0]}" r="6"></circle>`);
+      parts.push(boxGate(x, ys[1], "U1", op.parameter));
+    }else if(op.name === "swap"){
+      parts.push(`<line class="connector" x1="${x}" y1="${Math.min(...ys)}" x2="${x}" y2="${Math.max(...ys)}"></line>`);
+      parts.push(swapMark(x, ys[0]), swapMark(x, ys[1]));
+    }else if(op.name === "ccx"){
+      parts.push(`<line class="connector" x1="${x}" y1="${Math.min(...ys)}" x2="${x}" y2="${Math.max(...ys)}"></line>`);
+      parts.push(`<circle class="control" cx="${x}" cy="${ys[0]}" r="6"></circle>`);
+      parts.push(`<circle class="control" cx="${x}" cy="${ys[1]}" r="6"></circle>`);
+      parts.push(targetMark(x, ys[2]));
+    }else{
+      parts.push(boxGate(x, ys[0], GATE_LABEL[op.name] || op.name.toUpperCase(), op.parameter));
+    }
+    parts.push(`</g>`);
+  });
+
+  measurements.forEach(m => {
+    const my = y(m.qubit);
+    parts.push(`<g aria-label="测量 q${m.qubit} 到 c${m.cbit}">`);
+    parts.push(`<rect class="box" x="${measureX-22}" y="${my-19}" width="44" height="38"></rect>`);
+    parts.push(`<path class="meter" d="M ${measureX-12} ${my+9} A 13 13 0 0 1 ${measureX+12} ${my+9}"></path>`);
+    parts.push(`<line class="meter" x1="${measureX}" y1="${my+8}" x2="${measureX+10}" y2="${my-8}"></line>`);
+    parts.push(`<line class="wire" x1="${measureX+22}" y1="${my}" x2="${width-54}" y2="${my}" marker-end="url(#c-arrow)"></line>`);
+    parts.push(`<text class="clabel" x="${width-48}" y="${my+5}">c[${m.cbit}]</text></g>`);
+  });
+
+  parts.push(`</svg>`);
+  return `<div class="circuit-scroll">${parts.join("")}</div>`
+    + `<div class="circuit-legend">● 控制位　⊕ 条件翻转　× 交换　仪表为测量；编号表示执行顺序。</div>`
+    + `<div class="circuit-detail" aria-live="polite">点击或用键盘聚焦一个门，查看这一步的完整信息。</div>`;
+}
+
+function bindCircuit(panel){
+  const detail = panel.querySelector(".circuit-detail");
+  panel.querySelectorAll(".gate").forEach(gate => {
+    const show = () => {
+      panel.querySelectorAll(".gate").forEach(item => item.classList.toggle("selected", item === gate));
+      detail.textContent = operationText(state.circuitData.operations[Number(gate.dataset.step)], Number(gate.dataset.step));
+    };
+    gate.addEventListener("click", show);
+    gate.addEventListener("focus", show);
+    gate.addEventListener("keydown", event => {
+      if(event.key === "Enter" || event.key === " "){ event.preventDefault(); show(); }
+    });
+  });
+}
+
+function basisHtml(basis){
+  if(!basis) return "";
+  return `<div class="basis"><strong>依据：</strong>${esc(basis.source)} ${esc(basis.version)}；${esc(basis.status)}。</div>`;
+}
 
 function histogram(probs){
   const keys = Object.keys(probs).sort();
@@ -170,13 +318,16 @@ function histogram(probs){
 
 function render(tab){
   const p = $("panel");
-  if(tab === "circuit") p.innerHTML = state.circuit ? `<pre>${esc(state.circuit)}</pre>`
-      : '<span class="muted">还没有电路。</span>';
+  if(tab === "circuit"){
+    if(state.circuitData){ p.innerHTML = circuitSvg(state.circuitData); bindCircuit(p); }
+    else if(state.diagram) p.innerHTML = `<pre>${esc(state.diagram)}</pre>`;
+    else p.innerHTML = '<span class="muted">还没有电路。</span>';
+  }
   else if(tab === "result") p.innerHTML = state.result ? histogram(state.result)
       : '<span class="muted">还没有运行结果。</span>';
   else if(tab === "qasm") p.innerHTML = state.qasm ? `<pre>${esc(state.qasm)}</pre>`
       : '<span class="muted">还没有 QASM。</span>';
-  else p.innerHTML = state.explain ? `<div>${esc(state.explain).replace(/\n/g,"<br>")}</div>`
+  else p.innerHTML = state.explain ? `<div>${esc(state.explain).replace(/\n/g,"<br>")}</div>${basisHtml(state.basis)}`
       : '<span class="muted">构建一个电路后，这里会用大白话解释它在做什么。</span>';
 }
 
@@ -194,7 +345,7 @@ $("demo").addEventListener("click", () => {
   box.hidden = !box.hidden;
 });
 document.querySelectorAll(".ex").forEach(b =>
-  b.addEventListener("click", () => { $("prompt").value = b.dataset.p; $("examples").hidden = true; $("go").focus(); }));
+  b.addEventListener("click", () => { $("prompt").value = b.dataset.p; $("examples").hidden = true; build(); }));
 
 $("prompt").addEventListener("keydown", e => {
   if((e.ctrlKey || e.metaKey) && e.key === "Enter") build();
@@ -216,15 +367,22 @@ async function build(){
       body: JSON.stringify({prompt})
     });
     const data = await res.json();
-    if(data.kind === "backend"){
-      state = {circuit:"", result:null, qasm:"", explain:data.explain, backend:data.backend};
+    if(data.kind === "explanation"){
+      state = {diagram:"", circuitData:null, result:null, qasm:"", explain:data.explain, backend:null, basis:null};
+      steps([{k:"ok", t:"听懂了：你想了解一个量子概念"}, {k:"ok", t:"已用大白话解释"}]);
+      $("fid").textContent = "保真度 —";
+      document.querySelectorAll(".tab").forEach(x =>
+        x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
+      render("explain");
+    } else if(data.kind === "backend"){
+      state = {diagram:"", circuitData:null, result:null, qasm:"", explain:data.explain, backend:data.backend, basis:data.basis || null};
       steps([{k:"ok", t:"听懂了：你在挑运行平台"}, {k:"ok", t:"已按官方后端能力表筛选"}]);
       $("fid").textContent = "保真度 —";
       document.querySelectorAll(".tab").forEach(x =>
         x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
       render("explain");
     } else if(data.ok){
-      state = {circuit:data.diagram, result:data.probabilities, qasm:data.qasm, explain:data.explain, backend:null};
+      state = {diagram:data.diagram, circuitData:data.circuit || null, result:data.probabilities, qasm:data.qasm, explain:data.explain, backend:null, basis:null};
       const list = [{k:"ok", t:`听懂了：${esc(data.intent)}`}, {k:"ok", t:"生成电路"}];
       list.push(data.fidelity !== null
         ? {k:"ok", t:`自检通过 —— 保真度 ${data.fidelity.toFixed(2)}`}

@@ -1,6 +1,6 @@
 # L2 设计方案：说人话的量子智能体
 
-> 分支 `feature/l2-agent`，基于 `feature/l1-transpiler`。
+> L2 初始实现来自 `feature/l2-agent`，最终在 `feature/l2-integration` 与 L1/L3 集成。
 > 目标：客观分 20 + 交互体验 10 = 30 分，并争取「新手引导与视觉叙事」+4 Bonus。
 
 ---
@@ -85,11 +85,12 @@ fidelity = |⟨ψ_target | ψ_generated⟩|²
 
 ```json
 {
-  "task": "generate | fix | select_backend",
+  "task": "qasm | select_backend | explain",
   "target_state": "ghz | bell | w | uniform | custom",
   "num_qubits": 3,
-  "measure_all": true,
-  "constraints": {"min_qubits": 15, "queue": "none"}
+  "qasm": "完整 OpenQASM 2.0 或 null",
+  "answer": "纯概念问题的大白话回答或 null",
+  "constraints": {"min_qubits": 15, "no_queue": true}
 }
 ```
 
@@ -139,11 +140,13 @@ starter_kit/
 ├── adapter.py              # 改：agent_chat 转发到 agent 包
 └── agent/
     ├── __init__.py
-    ├── core.py             # 编排：分类 → 分流 → 自验 → 兜底
-    ├── prompts.py          # 系统提示词与 few-shot
+    ├── core.py             # 编排、时间预算、重试与兜底
+    ├── prompts.py          # 结构化系统提示词
     ├── verifier.py         # ★ 自验：parse + simulate + fidelity
     ├── backends.py         # 选后端约束求解
-    └── budget.py           # 时间预算与重试控制
+    ├── presenter.py        # 电路图与零基础解释
+    ├── server.py           # 本地 HTTP 入口
+    └── ui.html             # 自包含交互界面
 ```
 
 `verifier.py` 复用 L1 的 `qasm_parser` / `simulator`，不重写。
@@ -158,6 +161,7 @@ starter_kit/
 
 - **单文件自包含 HTML**，零 CDN、零外部字体（评测环境不保证外网；题面 `LoomQ-赛题.html` 本身就是这个规格，与仓库风格一致）
 - 后端：Python `http.server` 起本地服务，调用同一个 `agent_chat`
+- 示例按钮只提交自然语言，不包含预制答案；意图由模型按结构化 Prompt 判断
 - **UI 与客观分完全解耦**——UI 挂了不影响 20 分
 
 ### 5.2 关键界面
@@ -206,14 +210,14 @@ starter_kit/
 
 | 阶段 | 内容 | 产出 |
 |---|---|---|
-| **A** | `verifier.py` + 本地 fidelity 校验（**不依赖 LLM，可先跑起来**） | 自验地基 |
-| **B** | `backends.py` 选后端求解 + 单测 | 三类任务里最确定的分 |
-| **C** | `prompts.py` + `core.py` 生成/纠错闭环 | 客观 20 分主体 |
-| **D** | 本地 mock LLM 端到端测试（复用 `test_l2_contract.py` 的 `ThreadingHTTPServer` 手法） | 无需真 Key 即可回归 |
-| **E** | 真实 DeepSeek Key 调优通过率 | 逼近 20 分 |
-| **F** | Win98 UI | 交互 10 分 + Bonus 4 分 |
+| **A（完成）** | `verifier.py` + 本地 fidelity 校验 | 自验地基 |
+| **B（完成）** | `backends.py` 选后端求解 + 单测 | 三类任务里最确定的分 |
+| **C（完成）** | `prompts.py` + `core.py` 生成/纠错闭环 | 客观 20 分主体 |
+| **D（完成）** | 本地 mock LLM 端到端测试 | 无需真 Key 即可回归 |
+| **E（待办）** | 真实 DeepSeek Key 调优通过率 | 逼近 20 分 |
+| **F（完成）** | Win98 UI | 交互 10 分 + Bonus 4 分 |
 
-阶段 A/B/D 完全不需要 API Key，现在就能动工。
+当前唯一依赖外部凭证的验证是阶段 E；其余路径均可离线复现。
 
 ---
 
@@ -221,7 +225,7 @@ starter_kit/
 
 | 风险 | 应对 |
 |---|---|
-| 隐藏变体措辞超出预期 | 分类步骤不做关键词匹配，交给 LLM 结构化输出；prompt 里放多样化 few-shot |
+| 隐藏变体措辞超出预期 | 分类步骤不做关键词匹配，交给 LLM 按 JSON Schema 和意图优先级结构化输出；用独立变体测试验证，不内置评分样例答案 |
 | 目标态识别失败导致误杀正确答案 | 识别不出时**降级为只校验语法**，不强行 fidelity 拦截 |
 | 120 秒超时 | 单调时钟 + 每轮预算检查 + 兜底输出 |
 | 模型返回非规范 QASM（含 markdown/解释文字） | 提取器容错：围栏优先，退化为正则扫 `OPENQASM` 起始段 |
