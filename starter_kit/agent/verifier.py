@@ -112,6 +112,7 @@ class VerificationResult:
     circuit: Circuit | None = None
     fidelity: float | None = None
     probabilities: dict[str, float] = field(default_factory=dict)
+    expected_probabilities: dict[str, float] = field(default_factory=dict)
 
     @property
     def feedback(self) -> str:
@@ -123,17 +124,28 @@ class VerificationResult:
                 "上一次生成的 QASM 无法解析，解析器报错："
                 f"{self.message}\n请修正后重新输出完整的 OpenQASM 2.0 代码。"
             )
-        if self.stage == "fidelity":
+        if self.stage in {"fidelity", "distribution"}:
             observed = ", ".join(
                 f"{key}={value:.3f}"
                 for key, value in sorted(
                     self.probabilities.items(), key=lambda item: -item[1]
                 )[:6]
             )
+            target = "目标测量分布" if self.stage == "distribution" else "目标态"
+            expected = ", ".join(
+                f"{key}={value:.3f}"
+                for key, value in self.expected_probabilities.items()
+            )
+            distribution_hint = (
+                f"\n目标测量分布为：{expected}\n"
+                "位串按 c[n-1]...c[0] 显示：最左位对应 q[n-1]，最右位对应 q[0]。"
+                if expected
+                else ""
+            )
             return (
-                f"上一次生成的电路语法正确，但保真度只有 {self.fidelity:.3f}"
+                f"上一次生成的电路语法正确，但与{target}的保真度只有 {self.fidelity:.3f}"
                 f"（需要 ≥ {FIDELITY_THRESHOLD}）。\n"
-                f"实际测量分布为：{observed}\n"
+                f"实际测量分布为：{observed}{distribution_hint}\n"
                 "请检查门序列是否真正实现了目标态，然后重新输出完整代码。"
             )
         return self.message
@@ -143,6 +155,7 @@ def verify(
     qasm: str,
     target_state: str | None = None,
     qubit_count: int | None = None,
+    expected_probabilities: dict[str, float] | None = None,
 ) -> VerificationResult:
     """校验一段 QASM。目标态未知时只做语法校验，不强行拦截。"""
 
@@ -156,6 +169,51 @@ def verify(
         for key, value in result_probabilities(circuit).items()
         if value > 1e-12
     }
+
+    if expected_probabilities:
+        valid = all(
+            isinstance(key, str)
+            and len(key) == circuit.cbit_count
+            and not (set(key) - {"0", "1"})
+            and isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(value)
+            and value >= 0
+            for key, value in expected_probabilities.items()
+        )
+        total = sum(expected_probabilities.values()) if valid else 0
+        if total <= 0:
+            return VerificationResult(
+                False,
+                "distribution",
+                "目标测量分布无效",
+                qasm=qasm,
+                circuit=circuit,
+                fidelity=0.0,
+                probabilities=probabilities,
+            )
+        expected = {
+            key: value / total for key, value in expected_probabilities.items()
+        }
+        score = sum(
+            math.sqrt(probabilities.get(key, 0.0) * probability)
+            for key, probability in expected.items()
+        ) ** 2
+        passed = score >= FIDELITY_THRESHOLD
+        return VerificationResult(
+            passed,
+            "distribution",
+            (
+                f"目标分布自检通过 —— 保真度 {score:.3f}"
+                if passed
+                else f"分布保真度 {score:.3f} 低于阈值 {FIDELITY_THRESHOLD}"
+            ),
+            qasm=qasm,
+            circuit=circuit,
+            fidelity=score,
+            probabilities=probabilities,
+            expected_probabilities=expected,
+        )
 
     expected = target_statevector(
         target_state or "", qubit_count or circuit.qubit_count

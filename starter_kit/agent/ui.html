@@ -18,6 +18,7 @@
 }
 *{box-sizing:border-box}
 html,body{min-height:100%}
+[hidden]{display:none!important}
 body{
   margin:0; padding:22px; color:var(--y2k-ink); font-size:14px;
   font-family:"Trebuchet MS",Tahoma,Geneva,Verdana,sans-serif;
@@ -28,6 +29,52 @@ body{
   background-size:24px 24px;
 }
 .out,.in{border:2px solid var(--y2k-ink)}
+
+/* Landing page: two honest entry points into the same builder workflow. */
+.landing{max-width:1180px; margin:0 auto}
+.landing-header{
+  display:flex; align-items:center; justify-content:space-between; gap:16px; padding:13px 16px;
+  border:2px solid var(--y2k-ink); border-radius:7px; background:#fff;
+  box-shadow:5px 5px 0 var(--y2k-ink);
+}
+.brand{display:flex; align-items:center; gap:10px; font-size:24px; font-weight:800; letter-spacing:-.04em}
+.brand-mark{
+  display:grid; width:34px; height:34px; place-items:center; border:2px solid var(--y2k-ink);
+  border-radius:6px; background:var(--y2k-lilac); box-shadow:2px 2px 0 var(--y2k-ink);
+}
+.ready{
+  display:flex; align-items:center; gap:8px; padding:7px 10px; border:2px solid var(--y2k-ink);
+  border-radius:5px; background:var(--y2k-mint); font:700 12px/1 ui-monospace,monospace;
+}
+.ready::before{content:""; width:9px; height:9px; border:1px solid var(--y2k-ink); border-radius:50%; background:#1bbf8b}
+.landing-grid{display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:22px; margin-top:28px}
+.hero-window{
+  overflow:hidden; border:2px solid var(--y2k-ink); border-radius:8px; background:#fff;
+  box-shadow:7px 7px 0 var(--y2k-ink);
+}
+.landing-titlebar{
+  display:flex; min-height:48px; align-items:center; justify-content:space-between; gap:12px;
+  padding:9px 12px; border-bottom:2px solid var(--y2k-ink); background:var(--y2k-lilac);
+  font:700 13px/1 ui-monospace,monospace;
+}
+.title-dots{display:flex; gap:6px}
+.title-dots i{display:block; width:18px; height:18px; border:2px solid var(--y2k-ink); border-radius:3px; background:var(--y2k-pink)}
+.title-dots i:nth-child(2){background:var(--y2k-lemon)}
+.title-dots i:nth-child(3){background:var(--y2k-mint)}
+.hero-copy{display:flex; min-height:520px; flex-direction:column; justify-content:center; padding:44px 34px}
+.eyebrow{margin:0 0 18px; color:#7858d5; font-size:12px; font-weight:800; letter-spacing:.09em}
+.hero-copy h1{max-width:470px; margin:0; font-size:clamp(42px,5vw,66px); line-height:1.08; letter-spacing:-.06em}
+.hero-copy>p:not(.eyebrow):not(.microcopy){margin:24px 0 0; color:var(--y2k-ink-muted); font-size:17px; line-height:1.75}
+.hero-actions{display:flex; gap:12px; margin-top:34px}
+.hero-actions button{flex:1; min-height:52px; padding:10px 15px; font-weight:800}
+#launch-demo{background:var(--y2k-blue)}
+#get-started{background:var(--y2k-pink)}
+.microcopy{margin:15px 0 0!important; font-size:12px!important; font-weight:600}
+.app-view{min-width:0; padding-bottom:8px}
+.app-view .window{max-width:none; margin:0}
+.landing.builder-mode{max-width:860px}
+.landing.builder-mode .landing-header,.landing.builder-mode .hero-window{display:none}
+.landing.builder-mode .landing-grid{display:block; margin-top:0}
 
 .window{
   max-width:860px; margin:0 auto; padding:0; overflow:hidden; background:#fff;
@@ -156,9 +203,77 @@ button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px
   margin-top:9px; padding:8px 10px; border:2px solid var(--y2k-ink); border-radius:5px;
   background:rgba(143,240,208,.28);
 }
-.circuit-detail{min-height:34px}
+.circuit-detail{min-height:34px;white-space:pre-line}
 .circuit-legend{margin-top:7px; color:var(--y2k-ink-muted); font-size:12px}
 .basis{margin-top:12px; background:rgba(255,228,94,.35); font-size:12px}
+
+/* 模型只返回受校验的数据；这些组件负责安全地把数据画成教学卡片。 */
+.lesson{display:grid; gap:13px; max-width:920px}
+.lesson-head{
+  padding:15px 17px; border:2px solid var(--y2k-ink); border-radius:7px;
+  background:linear-gradient(135deg,rgba(142,209,252,.5),rgba(179,151,255,.32));
+  box-shadow:4px 4px 0 var(--y2k-ink);
+}
+.lesson-kicker{font:800 10px/1 ui-monospace,monospace; letter-spacing:.11em; color:#6547c7}
+.lesson h2{margin:7px 0 5px; font-size:22px; line-height:1.2}
+.lesson-summary{margin:0; font-size:14px; line-height:1.65}
+.lesson-visual{
+  margin:0; padding:13px; border:2px solid var(--y2k-ink); border-radius:7px;
+  background:rgba(255,228,94,.2);
+}
+.visual-track{display:flex; align-items:stretch; gap:28px; overflow-x:auto; padding:4px 2px 7px}
+.visual-node{
+  position:relative; min-width:125px; flex:1; padding:10px; text-align:center;
+  border:2px solid var(--y2k-ink); border-radius:6px; background:#fff;
+  box-shadow:3px 3px 0 var(--y2k-ink);
+}
+.visual-node:nth-child(2n){background:rgba(255,143,207,.3)}
+.visual-node strong{display:block; margin-bottom:5px; font-size:13px}
+.visual-node span{display:block; color:var(--y2k-ink-muted); font-size:11px; line-height:1.45}
+.visual-flow .visual-node:not(:last-child)::after{
+  content:"→"; position:absolute; z-index:2; right:-23px; top:50%;
+  transform:translateY(-50%); font-size:21px; font-weight:900;
+}
+.visual-compare .visual-node:first-child{background:rgba(142,209,252,.35)}
+.visual-compare .visual-node:last-child{background:rgba(143,240,208,.35)}
+.visual-relation{align-items:center; gap:12px}
+.visual-relation .visual-node:first-child{background:rgba(142,209,252,.35)}
+.visual-relation .visual-node:last-child{background:rgba(255,143,207,.26)}
+.visual-link{
+  min-width:120px; padding:7px 9px; text-align:center; border:2px solid var(--y2k-ink);
+  border-radius:999px; background:var(--y2k-lemon); font-size:11px; font-weight:800;
+}
+.visual-link::before,.visual-link::after{content:"—"; margin:0 4px}
+.lesson-visual figcaption{margin-top:7px; color:var(--y2k-ink-muted); font-size:11px; text-align:center}
+.lesson-cards{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+.lesson-card{
+  min-height:110px; padding:12px; border:2px solid var(--y2k-ink); border-radius:6px;
+  background:#fff; box-shadow:3px 3px 0 var(--y2k-panel);
+}
+.lesson-card:nth-child(2){background:rgba(142,209,252,.22)}
+.lesson-card:nth-child(3){background:rgba(143,240,208,.22)}
+.lesson-card:nth-child(4){background:rgba(255,143,207,.2)}
+.lesson-card h3{margin:0 0 7px; font-size:14px}
+.lesson-card p{margin:0; color:var(--y2k-ink-muted); font-size:12px; line-height:1.6}
+.lesson-icon{display:inline-grid; width:23px; height:23px; margin-right:6px; place-items:center;
+  border:2px solid var(--y2k-ink); border-radius:50%; background:var(--y2k-lemon); font-size:11px}
+.lesson-takeaway{padding:10px 12px; border:2px solid var(--y2k-ink); border-radius:6px; background:var(--y2k-mint)}
+.circuit-lesson-steps{display:grid; gap:8px}
+.circuit-lesson-step{display:grid; grid-template-columns:31px 1fr; gap:9px; align-items:start;
+  padding:10px; border:2px solid var(--y2k-ink); border-radius:6px; background:#fff}
+.step-number{display:grid; width:29px; height:29px; place-items:center; border:2px solid var(--y2k-ink);
+  border-radius:50%; background:var(--y2k-lemon); font-weight:800}
+.circuit-lesson-step p{margin:0 0 4px; line-height:1.55}
+.term-chip{display:inline-block; margin:3px 4px 0 0; padding:2px 6px; border:1px solid var(--y2k-ink);
+  border-radius:999px; background:rgba(179,151,255,.22); font-size:10px}
+.task-block{display:grid; gap:10px; margin-bottom:16px}
+.task-block:last-child{margin-bottom:0}
+.task-heading{display:flex; align-items:center; gap:9px; padding:9px 11px; border:2px solid var(--y2k-ink);
+  border-radius:6px; background:var(--y2k-lemon)}
+.task-heading span{padding:3px 7px; border:2px solid var(--y2k-ink); border-radius:999px; background:#fff;
+  font-size:10px; font-weight:900}
+.task-heading strong{font-size:15px}
+.task-heading small{margin-left:auto; color:var(--y2k-ink-muted); font-weight:700}
 
 /* 结果柱状图 */
 .hist{display:flex; align-items:flex-end; gap:10px; height:130px; padding-top:6px}
@@ -186,6 +301,15 @@ button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px
 
 @media (max-width:640px){
   body{padding:10px; background-size:18px 18px}
+  .landing-header{padding:10px 11px; box-shadow:4px 4px 0 var(--y2k-ink)}
+  .brand{font-size:20px}
+  .brand-mark{width:30px; height:30px}
+  .ready{font-size:10px}
+  .landing-grid{grid-template-columns:1fr; gap:17px; margin-top:18px}
+  .hero-window{box-shadow:4px 4px 0 var(--y2k-ink)}
+  .hero-copy{min-height:auto; padding:34px 22px}
+  .hero-copy h1{font-size:42px}
+  .hero-actions{flex-direction:column}
   .body{padding:11px}
   .window{box-shadow:4px 4px 0 var(--y2k-ink)}
   .titlebar{padding:8px}
@@ -194,10 +318,39 @@ button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px
   .menubar{gap:7px; overflow:auto}
   .tab{padding:7px 8px; font-size:12px}
   .status{flex-direction:column}
+  .lesson-cards{grid-template-columns:1fr}
+  .visual-track{gap:24px}
+  .visual-node{min-width:115px}
+  .task-heading{align-items:flex-start; flex-wrap:wrap}
+  .task-heading small{width:100%; margin-left:0}
 }
 </style>
 </head>
 <body>
+<main id="landing" class="landing">
+  <header class="landing-header">
+    <div class="brand"><span class="brand-mark">L</span><span>LoomQ</span></div>
+    <span class="ready">LOCAL UI READY</span>
+  </header>
+
+  <div class="landing-grid">
+    <section class="hero-window" aria-labelledby="hero-title">
+      <div class="landing-titlebar">
+        <span class="title-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow">QUANTUM ACCESSIBILITY FOR EVERYONE</p>
+        <h1 id="hero-title">用一句话，<br>造一条量子电路</h1>
+        <p>从自然语言到跨平台运行结果，LoomQ 自动完成解析、生成、执行与验证。</p>
+        <div class="hero-actions">
+          <button id="launch-demo">▶ LAUNCH DEMO</button>
+          <button id="get-started">GET STARTED →</button>
+        </div>
+        <p class="microcopy">无需量子基础 · 点击 GET STARTED 开始构建</p>
+      </div>
+    </section>
+
+    <div id="app-view" class="app-view">
 <div class="window out">
   <div class="titlebar">
     <span class="t">LoomQ 量子助手 — 用大白话造量子电路</span>
@@ -245,14 +398,17 @@ button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px
     </div>
   </div>
 </div>
+</div>
+  </div>
+</main>
 
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-let state = {diagram:"", circuitData:null, result:null, qasm:"", explain:"", backend:null, basis:null};
+let state = {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:"", explanation:null, concept:null, tasks:null, circuits:null, backend:null, basis:null};
 
 function steps(items){
-  $("steps").innerHTML = items.map(s => `<li class="${s.k}">${s.t}</li>`).join("");
+  $("steps").innerHTML = items.map(s => `<li class="${s.k}">${esc(s.t)}</li>`).join("");
 }
 function busy(on){
   $("progress").classList.toggle("on", on);
@@ -273,10 +429,12 @@ function shortParam(value){
   return text.length > 11 ? text.slice(0, 10) + "…" : text;
 }
 
-function operationText(op, index){
-  const qubits = op.qubits.map(q => `q${q}`).join("、");
-  const parameter = op.parameter ? `，参数 ${op.parameter}` : "";
-  return `步骤 ${index + 1}：${GATE_LABEL[op.name] || op.name.toUpperCase()}，作用于 ${qubits}${parameter}`;
+function operationText(explanation, index){
+  const step = explanation?.steps?.find(item => item.operation_id === `op_${index}`);
+  if(!step) return `第 ${index + 1} 步的白话解释暂时不可用。`;
+  const terms = (step.terms || []).map(term => `${term.symbol}＝${term.meaning}`).join("；");
+  return `第 ${index + 1} 步：${step.plain}\n为什么需要：${step.purpose}`
+    + (terms ? `\n术语：${terms}` : "");
 }
 
 function targetMark(x, y){
@@ -296,32 +454,32 @@ function boxGate(x, y, label, parameter=""){
     + (parameter ? `<text class="param" x="${x}" y="${y+13}">${esc(shortParam(parameter))}</text>` : "");
 }
 
-function circuitSvg(circuit){
+function circuitSvg(circuit, explanation){
   const operations = circuit.operations || [];
   const measurements = circuit.measurements || [];
   const qubits = Math.max(1, circuit.qubit_count || 1);
-  const left = 64, top = 50, rowGap = 68, columnGap = 84;
+  const left = 126, top = 50, rowGap = 68, columnGap = 84;
   const firstGateX = left + 56;
   const measureX = firstGateX + operations.length * columnGap + 24;
-  const width = Math.max(620, measureX + 145);
+  const width = Math.max(720, measureX + 180);
   const height = Math.max(190, top + (qubits - 1) * rowGap + 70);
   const y = q => top + q * rowGap;
   const parts = [
     `<svg class="circuit-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="量子电路图">`,
     `<defs><marker id="c-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#111"></path></marker></defs>`,
-    `<text class="measure-title" x="${measureX}" y="20">测量</text>`
+    `<text class="measure-title" x="${measureX}" y="20">最后读取结果</text>`
   ];
 
   for(let q=0; q<qubits; q++){
-    parts.push(`<text class="qlabel" x="${left-12}" y="${y(q)+5}">q[${q}]</text>`);
-    parts.push(`<line class="wire" x1="${left}" y1="${y(q)}" x2="${width-42}" y2="${y(q)}"></line>`);
+    parts.push(`<text class="qlabel" x="${left-12}" y="${y(q)+5}">第 ${q+1} 位  q[${q}]</text>`);
+    parts.push(`<line class="wire" x1="${left}" y1="${y(q)}" x2="${width-88}" y2="${y(q)}"></line>`);
   }
 
   operations.forEach((op, index) => {
     const x = firstGateX + index * columnGap;
     const ys = op.qubits.map(y);
-    const title = operationText(op, index);
-    parts.push(`<g class="gate" data-step="${index}" tabindex="0" role="button" aria-label="${escAttr(title)}"><title>${esc(title)}</title>`);
+    const title = operationText(explanation, index);
+    parts.push(`<g class="gate" data-detail="${escAttr(title)}" tabindex="0" role="button" aria-label="${escAttr(title)}"><title>${esc(title)}</title>`);
     parts.push(`<text class="step" x="${x}" y="20">${index+1}</text>`);
     if(op.name === "cx"){
       parts.push(`<line class="connector" x1="${x}" y1="${Math.min(...ys)}" x2="${x}" y2="${Math.max(...ys)}"></line>`);
@@ -351,28 +509,35 @@ function circuitSvg(circuit){
     parts.push(`<rect class="box" x="${measureX-22}" y="${my-19}" width="44" height="38"></rect>`);
     parts.push(`<path class="meter" d="M ${measureX-12} ${my+9} A 13 13 0 0 1 ${measureX+12} ${my+9}"></path>`);
     parts.push(`<line class="meter" x1="${measureX}" y1="${my+8}" x2="${measureX+10}" y2="${my-8}"></line>`);
-    parts.push(`<line class="wire" x1="${measureX+22}" y1="${my}" x2="${width-54}" y2="${my}" marker-end="url(#c-arrow)"></line>`);
-    parts.push(`<text class="clabel" x="${width-48}" y="${my+5}">c[${m.cbit}]</text></g>`);
+    parts.push(`<line class="wire" x1="${measureX+22}" y1="${my}" x2="${width-88}" y2="${my}" marker-end="url(#c-arrow)"></line>`);
+    parts.push(`<text class="clabel" x="${width-80}" y="${my+5}">结果 c[${m.cbit}]</text></g>`);
   });
 
   parts.push(`</svg>`);
   return `<div class="circuit-scroll">${parts.join("")}</div>`
-    + `<div class="circuit-legend">● 控制位　⊕ 条件翻转　× 交换　仪表为测量；编号表示执行顺序。</div>`
-    + `<div class="circuit-detail" aria-live="polite">点击或用键盘聚焦一个门，查看这一步的完整信息。</div>`;
+    + `<div class="circuit-legend"><strong>怎么看：</strong>每条横线是一位量子信息，操作从左往右依次执行；● 是“条件开关”，⊕ 是被控制的翻转，仪表表示最后读取结果。</div>`
+    + `<div class="circuit-detail" aria-live="polite">下面会用白话解释当前步骤，不需要先记住图里的符号。</div>`;
 }
 
 function bindCircuit(panel){
-  const detail = panel.querySelector(".circuit-detail");
   panel.querySelectorAll(".gate").forEach(gate => {
     const show = () => {
-      panel.querySelectorAll(".gate").forEach(item => item.classList.toggle("selected", item === gate));
-      detail.textContent = operationText(state.circuitData.operations[Number(gate.dataset.step)], Number(gate.dataset.step));
+      const block = gate.closest(".task-block") || panel;
+      block.querySelectorAll(".gate").forEach(item => item.classList.toggle("selected", item === gate));
+      block.querySelector(".circuit-detail").textContent = gate.dataset.detail;
     };
     gate.addEventListener("click", show);
     gate.addEventListener("focus", show);
     gate.addEventListener("keydown", event => {
       if(event.key === "Enter" || event.key === " "){ event.preventDefault(); show(); }
     });
+  });
+  panel.querySelectorAll(".task-block").forEach(block => {
+    const first = block.querySelector(".gate");
+    if(first){
+      first.classList.add("selected");
+      block.querySelector(".circuit-detail").textContent = first.dataset.detail;
+    }
   });
 }
 
@@ -392,18 +557,134 @@ function histogram(probs){
   }).join("") + "</div>";
 }
 
+const LESSON_ICONS = {definition:"◎", analogy:"≈", example:"▶", fact:"i", caution:"!", action:"→"};
+
+function conceptLessonHtml(lesson){
+  const visualType = ["compare", "relation"].includes(lesson.visual.type) ? lesson.visual.type : "flow";
+  const nodeList = lesson.visual.items.map(item =>
+    `<div class="visual-node"><strong>${esc(item.label)}</strong><span>${esc(item.detail)}</span></div>`
+  );
+  const nodes = visualType === "relation"
+    ? `${nodeList[0]}<div class="visual-link">${esc(lesson.visual.link)}</div>${nodeList[1]}`
+    : nodeList.join("");
+  const cards = lesson.cards.map(card =>
+    `<section class="lesson-card"><h3><span class="lesson-icon">${LESSON_ICONS[card.kind] || "·"}</span>${esc(card.title)}</h3>`
+    + `<p>${esc(card.body)}</p></section>`
+  ).join("");
+  return `<article class="lesson">`
+    + `<header class="lesson-head"><span class="lesson-kicker">VISUAL EXPLAINER</span>`
+    + `<h2>${esc(lesson.title)}</h2><p class="lesson-summary">${esc(lesson.summary)}</p></header>`
+    + `<figure class="lesson-visual" role="img" aria-label="${escAttr(lesson.visual.caption)}">`
+    + `<div class="visual-track visual-${visualType}">${nodes}</div>`
+    + `<figcaption>${esc(lesson.visual.caption)}</figcaption></figure>`
+    + `<div class="lesson-cards">${cards}</div>`
+    + `<div class="lesson-takeaway"><strong>只记这一句：</strong>${esc(lesson.takeaway)}</div>`
+    + `</article>`;
+}
+
+function circuitLessonHtml(lesson){
+  const stepCards = lesson.steps.map((step, index) => {
+    const terms = (step.terms || []).map(term =>
+      `<span class="term-chip"><strong>${esc(term.symbol)}</strong>：${esc(term.meaning)}</span>`
+    ).join("");
+    return `<section class="circuit-lesson-step"><span class="step-number">${index + 1}</span><div>`
+      + `<p><strong>${esc(step.plain)}</strong></p><p class="muted">为什么需要：${esc(step.purpose)}</p>${terms}</div></section>`;
+  }).join("");
+  const result = lesson.result
+    ? `<section class="lesson-card"><h3><span class="lesson-icon">✓</span>本地验证结果</h3><p>${esc(lesson.result)}</p></section>`
+    : "";
+  return `<article class="lesson"><header class="lesson-head"><span class="lesson-kicker">CIRCUIT WALKTHROUGH</span>`
+    + `<h2>这条电路在做什么？</h2><p class="lesson-summary">${esc(lesson.overview)}</p></header>`
+    + `<div class="circuit-lesson-steps">${stepCards}</div><div class="lesson-cards">`
+    + `<section class="lesson-card"><h3><span class="lesson-icon">M</span>怎么读结果</h3><p>${esc(lesson.measurement)}</p></section>`
+    + `${result}</div></article>`;
+}
+
+function plainAnswerHtml(text){
+  return `<article class="lesson"><header class="lesson-head"><span class="lesson-kicker">LOOMQ ANSWER</span>`
+    + `<p class="lesson-summary">${esc(text).replace(/\n/g,"<br>")}</p></header></article>`;
+}
+
+function hasCompoundGoals(){
+  return (state.tasks || []).length > 1 && state.tasks.some(task => task.kind === "circuit_build");
+}
+
+function taskNumber(kind){
+  const index = (state.tasks || []).findIndex(task => task.kind === kind);
+  return index < 0 ? 1 : index + 1;
+}
+
+function taskIdNumber(taskId){
+  const number = Number(String(taskId || "").split("_")[1]);
+  return Number.isFinite(number) ? number : 1;
+}
+
+function circuitItems(){
+  if(state.circuits?.length) return state.circuits;
+  if(!state.circuitData) return [];
+  return [{
+    task_id:`task_${taskNumber("circuit_build")}`,
+    request:"生成电路",
+    ok:true,
+    circuit:state.circuitData,
+    probabilities:state.result,
+    expected_probabilities:state.expected,
+    qasm:state.qasm,
+    explanation:state.explanation
+  }];
+}
+
+function taskBlockHtml(number, title, detail, body){
+  return `<section class="task-block"><header class="task-heading"><span>任务 ${number}</span>`
+    + `<strong>${esc(title)}</strong><small>${esc(detail)}</small></header>${body}</section>`;
+}
+
+function expectedResultText(expected=state.expected){
+  const entries = Object.entries(expected || {}).filter(([, value]) => value > 0);
+  if(!entries.length) return "已按用户目标生成并自检";
+  return "目标：" + entries.map(([key, value]) => `${key} ${(value * 100).toFixed(0)}%`).join(" · ");
+}
+
 function render(tab){
   const p = $("panel");
   if(tab === "circuit"){
-    if(state.circuitData){ p.innerHTML = circuitSvg(state.circuitData); bindCircuit(p); }
+    const items = circuitItems();
+    if(items.length){
+      p.innerHTML = items.map(item => item.ok
+        ? taskBlockHtml(taskIdNumber(item.task_id), "生成电路", item.request, circuitSvg(item.circuit, item.explanation))
+        : taskBlockHtml(taskIdNumber(item.task_id), "生成电路失败", item.request, `<p class="muted">${esc(item.message)}</p>`)
+      ).join("");
+      bindCircuit(p);
+    }
     else if(state.diagram) p.innerHTML = `<pre>${esc(state.diagram)}</pre>`;
     else p.innerHTML = '<span class="muted">还没有电路。</span>';
   }
-  else if(tab === "result") p.innerHTML = state.result ? histogram(state.result)
-      : '<span class="muted">还没有运行结果。</span>';
-  else if(tab === "qasm") p.innerHTML = state.qasm ? `<pre>${esc(state.qasm)}</pre>`
-      : '<span class="muted">还没有 QASM。</span>';
-  else p.innerHTML = state.explain ? `<div>${esc(state.explain).replace(/\n/g,"<br>")}</div>${basisHtml(state.basis)}`
+  else if(tab === "result"){
+    const items = circuitItems();
+    p.innerHTML = items.length ? items.map(item => item.ok
+      ? taskBlockHtml(taskIdNumber(item.task_id), "运行结果", expectedResultText(item.expected_probabilities), histogram(item.probabilities))
+      : taskBlockHtml(taskIdNumber(item.task_id), "运行失败", item.request, `<p class="muted">${esc(item.message)}</p>`)
+    ).join("") : '<span class="muted">还没有运行结果。</span>';
+  }
+  else if(tab === "qasm"){
+    const items = circuitItems();
+    p.innerHTML = items.length ? items.map(item => item.ok
+      ? taskBlockHtml(taskIdNumber(item.task_id), "QASM", item.request, `<pre>${esc(item.qasm)}</pre>`)
+      : taskBlockHtml(taskIdNumber(item.task_id), "QASM 未生成", item.request, `<p class="muted">${esc(item.message)}</p>`)
+    ).join("") : '<span class="muted">还没有 QASM。</span>';
+  }
+  else if(state.concept && circuitItems().length && hasCompoundGoals()){
+    const knowledge = (state.tasks || []).find(task => task.kind !== "circuit_build" && task.kind !== "backend_select");
+    const knowledgeNumber = knowledge ? Number(knowledge.id.split("_")[1]) : 1;
+    p.innerHTML = taskBlockHtml(knowledgeNumber, "理解问题", knowledge?.request || "概念与含义", conceptLessonHtml(state.concept))
+      + circuitItems().map(item => item.ok && item.explanation
+        ? taskBlockHtml(taskIdNumber(item.task_id), "生成电路", item.request, circuitLessonHtml(item.explanation))
+        : taskBlockHtml(taskIdNumber(item.task_id), "生成电路失败", item.request, `<p class="muted">${esc(item.message || "解释暂时不可用")}</p>`)
+      ).join("");
+  }
+  else if(state.concept && !state.circuitData) p.innerHTML = conceptLessonHtml(state.concept);
+  else if(state.explanation) p.innerHTML = circuitLessonHtml(state.explanation);
+  else p.innerHTML = state.explain ? `${plainAnswerHtml(state.explain)}${basisHtml(state.basis)}`
       : '<span class="muted">构建一个电路后，这里会用大白话解释它在做什么。</span>';
 }
 
@@ -428,6 +709,25 @@ $("prompt").addEventListener("keydown", e => {
 });
 $("go").addEventListener("click", build);
 
+function expandBuilder(runDemo=false, focusPrompt=false, updateRoute=true){
+  $("landing").classList.add("builder-mode");
+  const route = runDemo ? "/builder?demo=bell" : "/builder";
+  if(updateRoute && location.pathname + location.search !== route){
+    history.pushState({}, "", route);
+  }
+  window.scrollTo({top:0, behavior:"smooth"});
+  if(runDemo){
+    $("prompt").value = "做一个贝尔态";
+    build();
+  }else if(focusPrompt){
+    $("prompt").focus();
+  }
+}
+$("get-started").addEventListener("click", () => expandBuilder(false, true));
+$("launch-demo").addEventListener("click", () => expandBuilder(true));
+window.addEventListener("popstate", () =>
+  $("landing").classList.toggle("builder-mode", location.pathname === "/builder"));
+
 async function build(){
   const prompt = $("prompt").value.trim();
   if(!prompt){
@@ -443,33 +743,63 @@ async function build(){
       body: JSON.stringify({prompt})
     });
     const data = await res.json();
-    if(data.kind === "explanation"){
-      state = {diagram:"", circuitData:null, result:null, qasm:"", explain:data.explain, backend:null, basis:null};
-      steps([{k:"ok", t:"听懂了：你想了解一个量子概念"}, {k:"ok", t:"已用大白话解释"}]);
+    if(data.kind === "partial"){
+      state = {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:data.explain, explanation:null, concept:data.concept || null, tasks:data.tasks || null, circuits:null, backend:null, basis:null};
+      const knowledgeTask = (state.tasks || []).find(task => task.kind !== "circuit_build" && task.kind !== "backend_select");
+      const knowledgeNumber = knowledgeTask ? Number(knowledgeTask.id.split("_")[1]) : 1;
+      steps([
+        {k:"ok", t:`任务 ${knowledgeNumber}：理解问题已完成`},
+        {k:"err", t:`任务 ${taskNumber("circuit_build")}：候选电路未通过目标校验`}
+      ]);
+      $("fid").textContent = "保真度 —";
+      document.querySelectorAll(".tab").forEach(x =>
+        x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
+      render("explain");
+    } else if(data.kind === "explanation"){
+      state = {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:data.explain, explanation:null, concept:data.concept || null, tasks:data.tasks || null, circuits:null, backend:null, basis:null};
+      const intentLabel = data.intent?.label;
+      steps(intentLabel && data.concept
+        ? [{k:"ok", t:`听懂了：${intentLabel}`}, {k:"ok", t:"已生成图解"}]
+        : [{k:"ok", t:"已回答你的问题"}, {k:"err", t:"图解暂时不可用，已保留基础回答"}]);
       $("fid").textContent = "保真度 —";
       document.querySelectorAll(".tab").forEach(x =>
         x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
       render("explain");
     } else if(data.kind === "backend"){
-      state = {diagram:"", circuitData:null, result:null, qasm:"", explain:data.explain, backend:data.backend, basis:data.basis || null};
+      state = {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:data.explain, explanation:null, concept:null, tasks:data.tasks || null, circuits:null, backend:data.backend, basis:data.basis || null};
       steps([{k:"ok", t:"听懂了：你在挑运行平台"}, {k:"ok", t:"已按官方后端能力表筛选"}]);
       $("fid").textContent = "保真度 —";
       document.querySelectorAll(".tab").forEach(x =>
         x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
       render("explain");
     } else if(data.ok){
-      state = {diagram:data.diagram, circuitData:data.circuit || null, result:data.probabilities, qasm:data.qasm, explain:data.explain, backend:null, basis:null};
-      const list = [{k:"ok", t:`听懂了：${esc(data.intent)}`}, {k:"ok", t:"生成电路"}];
-      list.push(data.fidelity !== null
-        ? {k:"ok", t:`自检通过 —— 保真度 ${data.fidelity.toFixed(2)}`}
-        : {k:"ok", t:"语法自检通过"});
+      state = {diagram:data.diagram, circuitData:data.circuit || null, result:data.probabilities, expected:data.expected_probabilities || null, qasm:data.qasm, explain:data.explain, explanation:data.explanation || null, concept:data.concept || null, tasks:data.tasks || null, circuits:data.circuits || null, backend:null, basis:null};
+      const intentLabel = data.intent?.label || "你想构建一个量子电路";
+      const compound = (data.tasks || []).length > 1;
+      const list = [{k:"ok", t:`听懂了：${intentLabel}`}];
+      if(compound){
+        const knowledgeTask = (state.tasks || []).find(task => task.kind !== "circuit_build" && task.kind !== "backend_select");
+        if(knowledgeTask){
+          const knowledgeNumber = Number(knowledgeTask.id.split("_")[1]);
+          list.push({k:"ok", t:`任务 ${knowledgeNumber}：理解问题已单独解释`});
+        }
+      }
+      circuitItems().forEach(item => list.push(item.ok
+        ? {k:"ok", t:`任务 ${taskIdNumber(item.task_id)}：电路已生成并运行`}
+        : {k:"err", t:`任务 ${taskIdNumber(item.task_id)}：${item.message}`}
+      ));
+      list.push(data.all_tasks_ok === false
+        ? {k:"err", t:"部分任务未通过目标语义自检"}
+        : {k:"ok", t:"全部电路均通过目标语义自检"});
       steps(list);
-      $("fid").textContent = data.fidelity !== null ? `保真度 ${data.fidelity.toFixed(2)}` : "保真度 —";
+      const passedCircuits = circuitItems().filter(item => item.ok).length;
+      $("fid").textContent = circuitItems().length > 1 ? `${passedCircuits}/${circuitItems().length} 电路通过`
+        : data.fidelity !== null ? `保真度 ${data.fidelity.toFixed(2)}` : "保真度 —";
       document.querySelectorAll(".tab").forEach(x =>
         x.setAttribute("aria-selected", String(x.dataset.t === "circuit")));
       render("circuit");
     } else {
-      steps([{k:"err", t:esc(data.message)}]);
+      steps([{k:"err", t:data.message}]);
       $("fid").textContent = "保真度 —";
       if(data.qasm){ state.qasm = data.qasm; }
     }
@@ -480,6 +810,10 @@ async function build(){
   }
 }
 render("circuit");
+if(location.pathname === "/builder"){
+  const runDemo = new URLSearchParams(location.search).get("demo") === "bell";
+  expandBuilder(runDemo, !runDemo, false);
+}
 </script>
 </body>
 </html>

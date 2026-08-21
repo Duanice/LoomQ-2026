@@ -3,7 +3,8 @@
 
 用法：
     uv run python -m starter_kit.agent.server
-    然后浏览器打开 http://127.0.0.1:8000
+    欢迎页：http://127.0.0.1:8000/
+    Builder：http://127.0.0.1:8000/builder
 
 界面与正式 agent_chat 使用同一条模型调用、确定性路由和自验链路。
 未设置 LOOMQ_LLM_* 时会明确提示配置，不伪造 Agent 回答。
@@ -22,21 +23,197 @@ from pathlib import Path
 try:
     from ..llm_client import REQUIRED_ENV
     from .backends import capability_basis, load_backends
-    from .core import agent_chat
-    from .presenter import diagram, explain as explain_circuit
+    from .core import AgentResult, agent_result
+    from .explainer import (
+        decompose_request,
+        explain_circuit,
+        explain_question,
+        explanation_text,
+    )
+    from .presenter import diagram
     from .verifier import extract_qasm, verify
 except ImportError:  # 直接以脚本方式运行时。
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from starter_kit.agent.backends import capability_basis, load_backends
-    from starter_kit.agent.core import agent_chat
-    from starter_kit.agent.presenter import diagram, explain as explain_circuit
+    from starter_kit.agent.core import AgentResult, agent_result
+    from starter_kit.agent.explainer import (
+        decompose_request,
+        explain_circuit,
+        explain_question,
+        explanation_text,
+    )
+    from starter_kit.agent.presenter import diagram
     from starter_kit.agent.verifier import extract_qasm, verify
     from starter_kit.llm_client import REQUIRED_ENV
 
 
 UI_PATH = Path(__file__).resolve().parent / "ui.html"
+
+
+def _decompose(prompt: str) -> dict | None:
+    try:
+        return decompose_request(prompt)
+    except (RuntimeError, ValueError) as exc:
+        print(f"[LoomQ task decomposition fallback] {exc}")
+        return None
+
+
+def _knowledge_question(task_plan: dict | None) -> str | None:
+    if not task_plan:
+        return None
+    requests = [
+        task["request"]
+        for task in task_plan["tasks"]
+        if task["kind"] not in {"circuit_build", "backend_select"}
+    ]
+    return "\n".join(requests) if requests else None
+
+
+def _intent(task_plan: dict | None, lesson: dict | None) -> dict | None:
+    if task_plan:
+        kinds = [task["kind"] for task in task_plan["tasks"]]
+        return {
+            "primary_goal": kinds[0],
+            "goals": kinds,
+            "label": task_plan["label"],
+        }
+    return lesson["intent"] if lesson else None
+
+
+def _circuit_response(
+    prompt: str,
+    response: AgentResult,
+    qasm: str,
+    lesson: dict | None = None,
+    task_plan: dict | None = None,
+    expand_tasks: bool = True,
+) -> dict:
+    result = response.verification or verify(qasm)
+    if not result.ok or result.circuit is None:
+        return {
+            "kind": "circuit",
+            "ok": False,
+            "message": result.message,
+            "qasm": qasm,
+        }
+    try:
+        explanation = explain_circuit(
+            prompt,
+            result.circuit,
+            result.probabilities,
+            result.fidelity,
+        )
+    except (RuntimeError, ValueError) as exc:
+        print(f"[LoomQ circuit explanation fallback] {exc}")
+        explanation = None
+    task_plan = task_plan or _decompose(prompt)
+    knowledge_question = _knowledge_question(task_plan)
+    if lesson is None and knowledge_question:
+        try:
+            answer = response.plan.get("answer") if response.plan else None
+            lesson = explain_question(
+                knowledge_question,
+                answer if isinstance(answer, str) and answer.strip() else "请直接准确回答这个知识问题。",
+            )
+        except (RuntimeError, ValueError) as exc:
+            print(f"[LoomQ visual lesson fallback] {exc}")
+    intent = _intent(task_plan, lesson) or {
+        "primary_goal": "circuit_build",
+        "goals": ["circuit_build"],
+        "label": f"你想构建一个 {result.circuit.qubit_count} 比特量子电路",
+    }
+    payload = {
+        "kind": "circuit",
+        "ok": True,
+        "intent": intent,
+        "tasks": task_plan["tasks"] if task_plan else None,
+        "qasm": qasm,
+        "circuit": asdict(result.circuit),
+        "diagram": diagram(result.circuit),
+        "probabilities": result.probabilities,
+        "expected_probabilities": result.expected_probabilities,
+        "validation_stage": result.stage,
+        "explanation": explanation,
+        "concept": lesson,
+        "explain": (
+            explanation_text(explanation)
+            if explanation
+            else "小白解释暂时不可用；电路本身已通过本地验证。"
+        ),
+        "fidelity": result.fidelity,
+    }
+    circuit_tasks = [
+        task
+        for task in (task_plan or {}).get("tasks", [])
+        if task["kind"] == "circuit_build"
+    ]
+    if not circuit_tasks:
+        return payload
+
+    first_task = circuit_tasks[0]
+    circuits = [_circuit_item(payload, first_task)]
+    if expand_tasks:
+        circuits.extend(_run_circuit_task(task) for task in circuit_tasks[1:])
+    payload["circuits"] = circuits
+    payload["all_tasks_ok"] = all(item["ok"] for item in circuits)
+    return payload
+
+
+def _circuit_item(payload: dict, task: dict) -> dict:
+    fields = (
+        "ok",
+        "message",
+        "qasm",
+        "circuit",
+        "diagram",
+        "probabilities",
+        "expected_probabilities",
+        "validation_stage",
+        "explanation",
+        "explain",
+        "fidelity",
+    )
+    return {
+        "task_id": task["id"],
+        "request": task["request"],
+        **{field: payload[field] for field in fields if field in payload},
+    }
+
+
+def _run_circuit_task(task: dict) -> dict:
+    try:
+        response = agent_result(task["request"])
+        qasm = extract_qasm(response.text)
+        if not qasm:
+            message = (
+                response.verification.feedback
+                if response.verification is not None
+                else "模型没有返回完整的 OpenQASM 2.0 电路。"
+            )
+            return {
+                "task_id": task["id"],
+                "request": task["request"],
+                "ok": False,
+                "message": message,
+            }
+        payload = _circuit_response(
+            task["request"],
+            response,
+            qasm,
+            task_plan={"label": task["request"], "tasks": [task]},
+            expand_tasks=False,
+        )
+        return _circuit_item(payload, task)
+    except (RuntimeError, ValueError) as exc:
+        return {
+            "task_id": task["id"],
+            "request": task["request"],
+            "ok": False,
+            "message": str(exc),
+        }
+
 
 def handle_build(prompt: str) -> dict:
     if not all(os.environ.get(name) for name in REQUIRED_ENV):
@@ -46,27 +223,32 @@ def handle_build(prompt: str) -> dict:
             "message": "请先配置 LOOMQ_LLM_BASE_URL、LOOMQ_LLM_API_KEY 和 LOOMQ_LLM_MODEL。",
         }
 
-    reply = agent_chat(prompt)
+    response = agent_result(prompt)
+    reply = response.text
     qasm = extract_qasm(reply)
     if qasm:
-        result = verify(qasm)
-        if not result.ok or result.circuit is None:
-            return {
-                "kind": "circuit",
-                "ok": False,
-                "message": result.message,
-                "qasm": qasm,
-            }
+        return _circuit_response(prompt, response, qasm)
+    if response.verification is not None and not response.verification.ok:
+        answer = response.plan.get("answer") if response.plan else None
+        task_plan = _decompose(prompt)
+        knowledge_question = _knowledge_question(task_plan)
+        lesson = None
+        if knowledge_question:
+            try:
+                lesson = explain_question(
+                    knowledge_question,
+                    answer if isinstance(answer, str) and answer.strip() else "请直接准确回答这个知识问题。",
+                )
+            except (RuntimeError, ValueError) as exc:
+                print(f"[LoomQ partial explanation fallback] {exc}")
         return {
-            "kind": "circuit",
-            "ok": True,
-            "intent": f"量子电路，{result.circuit.qubit_count} 比特",
-            "qasm": qasm,
-            "circuit": asdict(result.circuit),
-            "diagram": diagram(result.circuit),
-            "probabilities": result.probabilities,
-            "explain": explain_circuit(result.circuit, result.probabilities),
-            "fidelity": result.fidelity,
+            "kind": "partial",
+            "ok": False,
+            "message": response.verification.feedback,
+            "explain": answer,
+            "intent": _intent(task_plan, lesson),
+            "tasks": task_plan["tasks"] if task_plan else None,
+            "concept": lesson,
         }
     for backend in load_backends():
         if backend["id"] in reply:
@@ -77,7 +259,43 @@ def handle_build(prompt: str) -> dict:
                 "explain": reply,
                 "basis": capability_basis(),
             }
-    return {"kind": "explanation", "ok": True, "explain": reply}
+    task_plan = _decompose(prompt)
+    circuit_tasks = [
+        task for task in (task_plan or {}).get("tasks", [])
+        if task["kind"] == "circuit_build"
+    ]
+    if circuit_tasks:
+        try:
+            circuit_response = agent_result(
+                "The validated intent includes circuit_build. Produce the complete "
+                "OpenQASM 2.0 circuit requested below; do not omit the circuit even "
+                f"when explanation is also requested.\n\nCircuit task:\n{circuit_tasks[0]['request']}"
+            )
+            circuit_qasm = extract_qasm(circuit_response.text)
+        except RuntimeError as exc:
+            print(f"[LoomQ circuit recovery fallback] {exc}")
+            circuit_qasm = None
+        if circuit_qasm:
+            return _circuit_response(
+                prompt,
+                circuit_response,
+                circuit_qasm,
+                task_plan=task_plan,
+            )
+    knowledge_question = _knowledge_question(task_plan) or prompt
+    try:
+        lesson = explain_question(knowledge_question, reply)
+    except (RuntimeError, ValueError) as exc:
+        print(f"[LoomQ visual lesson fallback] {exc}")
+        lesson = None
+    return {
+        "kind": "explanation",
+        "ok": True,
+        "explain": reply,
+        "intent": _intent(task_plan, lesson),
+        "tasks": task_plan["tasks"] if task_plan else None,
+        "concept": lesson,
+    }
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -92,7 +310,8 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
-        if self.path in ("/", "/index.html"):
+        path = self.path.partition("?")[0]
+        if path in ("/", "/index.html", "/builder"):
             self._send(200, UI_PATH.read_bytes(), "text/html; charset=utf-8")
         else:
             self._send(404, b"not found", "text/plain; charset=utf-8")
