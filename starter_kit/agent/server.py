@@ -3,187 +3,298 @@
 
 用法：
     uv run python -m starter_kit.agent.server
-    然后浏览器打开 http://127.0.0.1:8000
+    欢迎页：http://127.0.0.1:8000/
+    Builder：http://127.0.0.1:8000/builder
 
-设置了 LOOMQ_LLM_* 时走真实模型；未设置时用本地意图解析降级运行，
-界面与自验闭环仍然完整可演示（保真度是真算的，不是假数据）。
+界面与正式 agent_chat 使用同一条模型调用、确定性路由和自验链路。
+未设置 LOOMQ_LLM_* 时会明确提示配置，不伪造 Agent 回答。
 """
 
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 import json
 import os
-import re
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 try:
-    from .backends import Constraints, explain as explain_backend, select
-    from .presenter import diagram, explain as explain_circuit
-    from .verifier import verify
+    from ..llm_client import REQUIRED_ENV
+    from .backends import capability_basis, load_backends
+    from .core import AgentResult, agent_result
+    from .explainer import (
+        decompose_request,
+        explain_circuit,
+        explain_question,
+        explanation_text,
+    )
+    from .presenter import diagram
+    from .verifier import extract_qasm, verify
 except ImportError:  # 直接以脚本方式运行时。
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from starter_kit.agent.backends import Constraints, select
-    from starter_kit.agent.backends import explain as explain_backend
-    from starter_kit.agent.presenter import diagram, explain as explain_circuit
-    from starter_kit.agent.verifier import verify
+    from starter_kit.agent.backends import capability_basis, load_backends
+    from starter_kit.agent.core import AgentResult, agent_result
+    from starter_kit.agent.explainer import (
+        decompose_request,
+        explain_circuit,
+        explain_question,
+        explanation_text,
+    )
+    from starter_kit.agent.presenter import diagram
+    from starter_kit.agent.verifier import extract_qasm, verify
+    from starter_kit.llm_client import REQUIRED_ENV
 
 
 UI_PATH = Path(__file__).resolve().parent / "ui.html"
 
-CN_NUMBERS = {"零": 0, "一": 1, "两": 2, "二": 2, "三": 3, "四": 4, "五": 5,
-              "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
+
+def _decompose(prompt: str) -> dict | None:
+    try:
+        return decompose_request(prompt)
+    except (RuntimeError, ValueError) as exc:
+        print(f"[LoomQ task decomposition fallback] {exc}")
+        return None
 
 
-# 本地模拟上限：态矢量是 2^n，界面上不要让用户等到卡死。
-# 选后端只是查表，不受此限制。
-MAX_SIMULATED_QUBITS = 12
+def _knowledge_question(task_plan: dict | None) -> str | None:
+    if not task_plan:
+        return None
+    requests = [
+        task["request"]
+        for task in task_plan["tasks"]
+        if task["kind"] not in {"circuit_build", "backend_select"}
+    ]
+    return "\n".join(requests) if requests else None
 
 
-def _qubit_count(
-    text: str, default: int = 2, limit: int | None = MAX_SIMULATED_QUBITS
-) -> int:
-    found = None
-    # 「个」「只」「路」等量词可选，且「量子比特」要能整体匹配。
-    unit = r"(?:个|只|路)?\s*(?:量子)?\s*(?:比特|位|qubits?|量子位)"
-    digits = re.search(rf"(\d+)\s*{unit}", text, re.IGNORECASE)
-    if digits:
-        found = int(digits.group(1))
-    else:
-        for word, value in CN_NUMBERS.items():
-            if re.search(rf"{word}\s*{unit}", text):
-                found = value
-                break
-    if found is None:
-        return default
-    return max(1, found if limit is None else min(limit, found))
-
-
-def parse_intent(prompt: str) -> dict:
-    """本地意图解析 —— UI 演示与无 Key 场景的降级路径。
-
-    注意：正式评测的 agent_chat 不依赖这里，分类交给 LLM 完成；
-    此处只为让界面在没有 API Key 时也能完整走通。
-    """
-
-    text = prompt.lower()
-    wants_backend = any(
-        word in prompt for word in ("平台", "后端", "选哪个", "排队", "跑在", "用哪个")
-    ) or "backend" in text
-
-    if wants_backend:
+def _intent(task_plan: dict | None, lesson: dict | None) -> dict | None:
+    if task_plan:
+        kinds = [task["kind"] for task in task_plan["tasks"]]
         return {
-            "task": "select_backend",
-            "constraints": {
-                "min_qubits": _qubit_count(prompt, 0, limit=None) or None,
-                "no_queue": any(
-                    w in prompt
-                    for w in ("不想排队", "零排队", "不排队", "立刻", "马上")
-                ),
-                "free_only": any(w in prompt for w in ("免费", "不花钱", "白嫖")),
-                "no_account": any(
-                    w in prompt for w in ("不注册", "无需账号", "没有账号")
-                ),
-            },
+            "primary_goal": kinds[0],
+            "goals": kinds,
+            "label": task_plan["label"],
         }
+    return lesson["intent"] if lesson else None
 
-    if any(word in prompt for word in ("贝尔", "bell", "epr")):
-        return {"task": "generate", "target_state": "bell", "num_qubits": 2}
-    if any(word in prompt for word in ("ghz", "纠缠", "entangle")):
+
+def _circuit_response(
+    prompt: str,
+    response: AgentResult,
+    qasm: str,
+    lesson: dict | None = None,
+    task_plan: dict | None = None,
+    expand_tasks: bool = True,
+) -> dict:
+    result = response.verification or verify(qasm)
+    if not result.ok or result.circuit is None:
         return {
-            "task": "generate", "target_state": "ghz",
-            "num_qubits": _qubit_count(prompt, 3),
+            "kind": "circuit",
+            "ok": False,
+            "message": result.message,
+            "qasm": qasm,
         }
-    if any(word in prompt for word in ("w 态", "w态")):
+    try:
+        explanation = explain_circuit(
+            prompt,
+            result.circuit,
+            result.probabilities,
+            result.fidelity,
+        )
+    except (RuntimeError, ValueError) as exc:
+        print(f"[LoomQ circuit explanation fallback] {exc}")
+        explanation = None
+    task_plan = task_plan or _decompose(prompt)
+    knowledge_question = _knowledge_question(task_plan)
+    if lesson is None and knowledge_question:
+        try:
+            answer = response.plan.get("answer") if response.plan else None
+            lesson = explain_question(
+                knowledge_question,
+                answer if isinstance(answer, str) and answer.strip() else "请直接准确回答这个知识问题。",
+            )
+        except (RuntimeError, ValueError) as exc:
+            print(f"[LoomQ visual lesson fallback] {exc}")
+    intent = _intent(task_plan, lesson) or {
+        "primary_goal": "circuit_build",
+        "goals": ["circuit_build"],
+        "label": f"你想构建一个 {result.circuit.qubit_count} 比特量子电路",
+    }
+    payload = {
+        "kind": "circuit",
+        "ok": True,
+        "intent": intent,
+        "tasks": task_plan["tasks"] if task_plan else None,
+        "qasm": qasm,
+        "circuit": asdict(result.circuit),
+        "diagram": diagram(result.circuit),
+        "probabilities": result.probabilities,
+        "expected_probabilities": result.expected_probabilities,
+        "validation_stage": result.stage,
+        "explanation": explanation,
+        "concept": lesson,
+        "explain": (
+            explanation_text(explanation)
+            if explanation
+            else "小白解释暂时不可用；电路本身已通过本地验证。"
+        ),
+        "fidelity": result.fidelity,
+    }
+    circuit_tasks = [
+        task
+        for task in (task_plan or {}).get("tasks", [])
+        if task["kind"] == "circuit_build"
+    ]
+    if not circuit_tasks:
+        return payload
+
+    first_task = circuit_tasks[0]
+    circuits = [_circuit_item(payload, first_task)]
+    if expand_tasks:
+        circuits.extend(_run_circuit_task(task) for task in circuit_tasks[1:])
+    payload["circuits"] = circuits
+    payload["all_tasks_ok"] = all(item["ok"] for item in circuits)
+    return payload
+
+
+def _circuit_item(payload: dict, task: dict) -> dict:
+    fields = (
+        "ok",
+        "message",
+        "qasm",
+        "circuit",
+        "diagram",
+        "probabilities",
+        "expected_probabilities",
+        "validation_stage",
+        "explanation",
+        "explain",
+        "fidelity",
+    )
+    return {
+        "task_id": task["id"],
+        "request": task["request"],
+        **{field: payload[field] for field in fields if field in payload},
+    }
+
+
+def _run_circuit_task(task: dict) -> dict:
+    try:
+        response = agent_result(task["request"])
+        qasm = extract_qasm(response.text)
+        if not qasm:
+            message = (
+                response.verification.feedback
+                if response.verification is not None
+                else "模型没有返回完整的 OpenQASM 2.0 电路。"
+            )
+            return {
+                "task_id": task["id"],
+                "request": task["request"],
+                "ok": False,
+                "message": message,
+            }
+        payload = _circuit_response(
+            task["request"],
+            response,
+            qasm,
+            task_plan={"label": task["request"], "tasks": [task]},
+            expand_tasks=False,
+        )
+        return _circuit_item(payload, task)
+    except (RuntimeError, ValueError) as exc:
         return {
-            "task": "generate", "target_state": "w",
-            "num_qubits": _qubit_count(prompt, 3),
+            "task_id": task["id"],
+            "request": task["request"],
+            "ok": False,
+            "message": str(exc),
         }
-    if any(word in prompt for word in ("叠加", "均匀", "superposition", "随机")):
-        return {
-            "task": "generate", "target_state": "uniform",
-            "num_qubits": _qubit_count(prompt, 2),
-        }
-    return {"task": "unknown"}
-
-
-def build_qasm(target_state: str, qubit_count: int) -> str:
-    """为已知目标态生成参考电路（本地降级路径使用）。"""
-
-    lines = ["OPENQASM 2.0;", 'include "qelib1.inc";',
-             f"qreg q[{qubit_count}];", f"creg c[{qubit_count}];"]
-    if target_state in {"ghz", "bell"}:
-        lines.append("h q[0];")
-        lines += [f"cx q[{i}],q[{i + 1}];" for i in range(qubit_count - 1)]
-    elif target_state == "uniform":
-        lines += [f"h q[{i}];" for i in range(qubit_count)]
-    elif target_state == "w":
-        raise ValueError("W 态需要参数化旋转，本地降级路径暂不支持")
-    lines.append("measure q -> c;")
-    return "\n".join(lines)
-
-
-INTENT_LABEL = {
-    "ghz": "GHZ 纠缠态", "bell": "贝尔态",
-    "uniform": "均匀叠加态", "w": "W 态",
-}
 
 
 def handle_build(prompt: str) -> dict:
-    intent = parse_intent(prompt)
-
-    if intent["task"] == "select_backend":
-        raw = intent["constraints"]
-        constraints = Constraints(
-            min_qubits=raw["min_qubits"], no_queue=raw["no_queue"],
-            free_only=raw["free_only"], no_account=raw["no_account"],
-        )
-        results = select(constraints)
+    if not all(os.environ.get(name) for name in REQUIRED_ENV):
         return {
-            "kind": "backend",
-            "ok": True,
-            "backend": results[0]["id"] if results else None,
-            "explain": explain_backend(constraints, results),
+            "kind": "error",
+            "ok": False,
+            "message": "请先配置 LOOMQ_LLM_BASE_URL、LOOMQ_LLM_API_KEY 和 LOOMQ_LLM_MODEL。",
         }
 
-    if intent["task"] == "unknown":
+    response = agent_result(prompt)
+    reply = response.text
+    qasm = extract_qasm(reply)
+    if qasm:
+        return _circuit_response(prompt, response, qasm)
+    if response.verification is not None and not response.verification.ok:
+        answer = response.plan.get("answer") if response.plan else None
+        task_plan = _decompose(prompt)
+        knowledge_question = _knowledge_question(task_plan)
+        lesson = None
+        if knowledge_question:
+            try:
+                lesson = explain_question(
+                    knowledge_question,
+                    answer if isinstance(answer, str) and answer.strip() else "请直接准确回答这个知识问题。",
+                )
+            except (RuntimeError, ValueError) as exc:
+                print(f"[LoomQ partial explanation fallback] {exc}")
         return {
-            "kind": "circuit", "ok": False,
-            "message": "还没听懂这句话。试试「让三个量子比特纠缠在一起」，"
-                       "或者点「我不知道，给我例子」。",
+            "kind": "partial",
+            "ok": False,
+            "message": response.verification.feedback,
+            "explain": answer,
+            "intent": _intent(task_plan, lesson),
+            "tasks": task_plan["tasks"] if task_plan else None,
+            "concept": lesson,
         }
-
-    target_state = intent["target_state"]
-    qubit_count = intent["num_qubits"]
-    requested = _qubit_count(prompt, qubit_count, limit=None)
-    if requested > MAX_SIMULATED_QUBITS:
-        return {
-            "kind": "circuit", "ok": False,
-            "message": f"{requested} 比特超出了本地实时模拟的上限"
-                       f"（{MAX_SIMULATED_QUBITS} 比特）——再大就要等很久。"
-                       f"可以先试试 {MAX_SIMULATED_QUBITS} 比特以内的电路。",
-        }
+    for backend in load_backends():
+        if backend["id"] in reply:
+            return {
+                "kind": "backend",
+                "ok": True,
+                "backend": backend["id"],
+                "explain": reply,
+                "basis": capability_basis(),
+            }
+    task_plan = _decompose(prompt)
+    circuit_tasks = [
+        task for task in (task_plan or {}).get("tasks", [])
+        if task["kind"] == "circuit_build"
+    ]
+    if circuit_tasks:
+        try:
+            circuit_response = agent_result(
+                "The validated intent includes circuit_build. Produce the complete "
+                "OpenQASM 2.0 circuit requested below; do not omit the circuit even "
+                f"when explanation is also requested.\n\nCircuit task:\n{circuit_tasks[0]['request']}"
+            )
+            circuit_qasm = extract_qasm(circuit_response.text)
+        except RuntimeError as exc:
+            print(f"[LoomQ circuit recovery fallback] {exc}")
+            circuit_qasm = None
+        if circuit_qasm:
+            return _circuit_response(
+                prompt,
+                circuit_response,
+                circuit_qasm,
+                task_plan=task_plan,
+            )
+    knowledge_question = _knowledge_question(task_plan) or prompt
     try:
-        qasm = build_qasm(target_state, qubit_count)
-    except ValueError as exc:
-        return {"kind": "circuit", "ok": False, "message": str(exc)}
-
-    result = verify(qasm, target_state, qubit_count)
-    if not result.ok:
-        return {"kind": "circuit", "ok": False, "message": result.message, "qasm": qasm}
-
+        lesson = explain_question(knowledge_question, reply)
+    except (RuntimeError, ValueError) as exc:
+        print(f"[LoomQ visual lesson fallback] {exc}")
+        lesson = None
     return {
-        "kind": "circuit", "ok": True,
-        "intent": f"{INTENT_LABEL.get(target_state, target_state)}，{qubit_count} 比特",
-        "qasm": qasm,
-        "diagram": diagram(result.circuit),
-        "probabilities": result.probabilities,
-        "explain": explain_circuit(result.circuit, result.probabilities),
-        "fidelity": result.fidelity,
+        "kind": "explanation",
+        "ok": True,
+        "explain": reply,
+        "intent": _intent(task_plan, lesson),
+        "tasks": task_plan["tasks"] if task_plan else None,
+        "concept": lesson,
     }
 
 
@@ -199,7 +310,8 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
-        if self.path in ("/", "/index.html"):
+        path = self.path.partition("?")[0]
+        if path in ("/", "/index.html", "/builder"):
             self._send(200, UI_PATH.read_bytes(), "text/html; charset=utf-8")
         else:
             self._send(404, b"not found", "text/plain; charset=utf-8")
@@ -228,8 +340,9 @@ def main() -> int:
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     url = f"http://{args.host}:{server.server_port}"
     mode = (
-        "真实模型" if os.environ.get("LOOMQ_LLM_API_KEY")
-        else "本地降级（未设置 LOOMQ_LLM_*）"
+        "真实模型"
+        if all(os.environ.get(name) for name in REQUIRED_ENV)
+        else "未配置模型（请求时会提示设置 LOOMQ_LLM_*）"
     )
     print(f"LoomQ 量子助手已启动：{url}\n意图解析模式：{mode}\n按 Ctrl+C 停止。")
     if args.open:

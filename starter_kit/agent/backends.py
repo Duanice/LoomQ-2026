@@ -34,9 +34,22 @@ class Constraints:
 
 
 @lru_cache(maxsize=1)
+def load_capabilities() -> dict:
+    return json.loads(CAPABILITIES_PATH.read_text(encoding="utf-8"))
+
+
 def load_backends() -> tuple[dict, ...]:
-    data = json.loads(CAPABILITIES_PATH.read_text(encoding="utf-8"))
-    return tuple(data["backends"])
+    return tuple(load_capabilities()["backends"])
+
+
+def capability_basis() -> dict:
+    data = load_capabilities()
+    return {
+        "source": data["source"],
+        "version": data["version"],
+        "realtime": data["realtime"],
+        "status": data["status"],
+    }
 
 
 def select(constraints: Constraints) -> list[dict]:
@@ -55,7 +68,7 @@ def select(constraints: Constraints) -> list[dict]:
             continue
         if constraints.no_account and backend["requires_account"]:
             continue
-        if constraints.prefer_hardware and backend["kind"] == "simulator":
+        if constraints.prefer_hardware and backend["kind"] != "qpu":
             continue
         candidates.append(backend)
 
