@@ -101,6 +101,79 @@ body{
 .menubar span u{text-decoration:underline; text-underline-offset:2px}
 .body{padding:16px; background:#fdfcff}
 
+/* 入门教程：帮助菜单里的零基础引导 */
+.menubar span[role=button]{cursor:pointer}
+.menubar span[role=button]:focus-visible{outline:2px solid var(--y2k-ink); outline-offset:1px}
+.lang-toggle{
+  min-width:0; padding:3px 9px; margin-right:4px; border:2px solid var(--y2k-ink);
+  border-radius:4px; background:var(--y2k-lemon); font:700 11px/1.5 ui-monospace,monospace;
+  cursor:pointer;
+}
+.lang-toggle:hover{background:var(--y2k-mint)}
+.landing-header .lang-toggle{margin-right:8px}
+.tutorial-backdrop{
+  position:fixed; inset:0; z-index:50; display:flex; align-items:flex-start;
+  justify-content:center; padding:26px 16px; overflow:auto;
+  background:rgba(27,27,58,.42);
+}
+.tutorial{
+  width:min(760px,100%); border:2px solid var(--y2k-ink); border-radius:8px;
+  background:#fff; box-shadow:7px 7px 0 var(--y2k-ink);
+}
+.tutorial-bar{
+  display:flex; align-items:center; gap:10px; padding:9px 12px;
+  border-bottom:2px solid var(--y2k-ink); background:var(--y2k-lilac);
+  font-weight:700; border-radius:5px 5px 0 0;
+}
+.tutorial-bar .t{flex:1}
+.tutorial-close{
+  min-width:0; width:26px; height:24px; padding:0; border:2px solid var(--y2k-ink);
+  border-radius:4px; background:var(--y2k-pink); font-weight:700; cursor:pointer;
+}
+.tutorial-body{padding:18px 20px 22px}
+.tutorial-step{display:none}
+.tutorial-step.on{display:block}
+.tutorial-step h2{margin:0 0 4px; font-size:20px; letter-spacing:-.02em}
+.tutorial-lede{margin:0 0 14px; color:var(--y2k-ink-muted); font-size:13px}
+.tutorial-body p{margin:0 0 11px; line-height:1.75}
+.tutorial-body ul{margin:0 0 11px; padding-left:20px; line-height:1.75}
+.tutorial-body li{margin-bottom:5px}
+.tutorial-note{
+  margin:13px 0 0; padding:11px 13px; border:2px solid var(--y2k-ink);
+  border-radius:6px; background:rgba(255,228,94,.3); font-size:13px;
+}
+.tutorial-figure{
+  margin:13px 0; padding:13px; border:2px solid var(--y2k-ink); border-radius:6px;
+  background:rgba(142,209,252,.16); overflow-x:auto;
+}
+.tutorial-figure pre{
+  margin:0; font-family:ui-monospace,"Courier New",monospace; font-size:13px;
+  line-height:1.65; white-space:pre;
+}
+.coin{display:flex; gap:18px; flex-wrap:wrap; margin:13px 0}
+.coin-item{
+  flex:1; min-width:150px; padding:11px 13px; border:2px solid var(--y2k-ink);
+  border-radius:6px; background:#fff;
+}
+.coin-item b{display:block; margin-bottom:5px}
+.coin-item span{font-size:13px; color:var(--y2k-ink-muted)}
+.tutorial-foot{
+  display:flex; align-items:center; gap:10px; padding:13px 20px;
+  border-top:2px solid var(--y2k-ink); background:var(--y2k-panel);
+  border-radius:0 0 5px 5px;
+}
+.tutorial-dots{flex:1; display:flex; gap:6px}
+.tutorial-dots i{
+  width:9px; height:9px; border:2px solid var(--y2k-ink); border-radius:50%;
+  background:#fff;
+}
+.tutorial-dots i.on{background:var(--y2k-lilac)}
+.tutorial-foot button{min-width:92px; padding:7px 13px}
+@media (max-width:640px){
+  .tutorial-body{padding:15px}
+  .coin{flex-direction:column; gap:10px}
+}
+
 fieldset{
   margin:0 0 14px; padding:13px; border:2px solid var(--y2k-ink);
   border-radius:7px; background:#fff; box-shadow:3px 3px 0 var(--y2k-panel);
@@ -330,7 +403,8 @@ button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px
 <main id="landing" class="landing">
   <header class="landing-header">
     <div class="brand"><span class="brand-mark">L</span><span>LoomQ</span></div>
-    <span class="ready">LOCAL UI READY</span>
+    <button id="lang-toggle-2" class="lang-toggle" title="Switch language">EN</button>
+      <span class="ready" data-i18n="ready">LOCAL UI READY</span>
   </header>
 
   <div class="landing-grid">
@@ -339,44 +413,45 @@ button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px
         <span class="title-dots" aria-hidden="true"><i></i><i></i><i></i></span>
       </div>
       <div class="hero-copy">
-        <p class="eyebrow">QUANTUM ACCESSIBILITY FOR EVERYONE</p>
+        <p class="eyebrow" data-i18n="eyebrow">QUANTUM ACCESSIBILITY FOR EVERYONE</p>
         <h1 id="hero-title">用一句话，<br>造一条量子电路</h1>
         <p>从自然语言到跨平台运行结果，LoomQ 自动完成解析、生成、执行与验证。</p>
         <div class="hero-actions">
-          <button id="launch-demo">▶ LAUNCH DEMO</button>
-          <button id="get-started">GET STARTED →</button>
+          <button id="launch-demo" data-i18n="launchDemo">▶ LAUNCH DEMO</button>
+          <button id="get-started" data-i18n="getStarted">GET STARTED →</button>
         </div>
-        <p class="microcopy">无需量子基础 · 点击 GET STARTED 开始构建</p>
+        <p class="microcopy" data-i18n="microcopy">无需量子基础 · 点击 GET STARTED 开始构建</p>
       </div>
     </section>
 
     <div id="app-view" class="app-view">
 <div class="window out">
   <div class="titlebar">
-    <span class="t">LoomQ 量子助手 — 用大白话造量子电路</span>
+    <span class="t" data-i18n="winTitle">LoomQ 量子助手 — 用大白话造量子电路</span>
+    <button id="lang-toggle" class="lang-toggle" title="Switch language">EN</button>
     <span class="tbtn out" aria-hidden="true">_</span>
     <span class="tbtn out" aria-hidden="true">□</span>
     <span class="tbtn out" aria-hidden="true">✕</span>
   </div>
-  <div class="menubar"><span><u>文</u>件</span><span><u>编</u>辑</span><span><u>查</u>看</span><span><u>帮</u>助</span></div>
+  <div class="menubar"><span data-i18n="mFile"><u>文</u>件</span><span data-i18n="mEdit"><u>编</u>辑</span><span data-i18n="mView"><u>查</u>看</span><span id="help-menu" role="button" tabindex="0" aria-haspopup="dialog" data-i18n="mHelp"><u>帮</u>助</span></div>
 
   <div class="body">
     <fieldset>
       <legend>想做什么？</legend>
       <label for="prompt">用大白话说就行，不需要懂量子：</label>
-      <textarea id="prompt" placeholder="例如：让三个量子比特纠缠在一起"></textarea>
+      <textarea id="prompt" placeholder="例如：让三个量子比特纠缠在一起" data-i18n-ph="promptPh"></textarea>
       <div class="row">
-        <button id="go">开始构建</button>
-        <button id="demo">我不知道问些什么</button>
+        <button id="go" data-i18n="go">开始构建</button>
+        <button id="demo" data-i18n="demo">我不知道问些什么</button>
         <span id="hintline" class="muted"></span>
       </div>
       <div id="examples" class="hint" hidden>
         <strong>试试这些：</strong>
         <div class="row">
-          <button class="ex" data-p="让三个量子比特纠缠在一起">三比特纠缠</button>
-          <button class="ex" data-p="做一个贝尔态">贝尔态</button>
-          <button class="ex" data-p="我要跑 15 比特的电路，而且不想排队，选哪个平台？">选平台</button>
-          <button class="ex" data-p="什么是量子纠缠？">认识量子纠缠</button>
+          <button class="ex" data-p="让三个量子比特纠缠在一起" data-i18n="ex1">三比特纠缠</button>
+          <button class="ex" data-p="做一个贝尔态" data-i18n="ex2">贝尔态</button>
+          <button class="ex" data-p="我要跑 15 比特的电路，而且不想排队，选哪个平台？" data-i18n="ex3">选平台</button>
+          <button class="ex" data-p="什么是量子纠缠？" data-i18n="ex4">认识量子纠缠</button>
         </div>
       </div>
     </fieldset>
@@ -385,22 +460,104 @@ button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px
     <ul id="steps" class="steps"></ul>
 
     <div class="tabs" role="tablist">
-      <div class="tab out" role="tab" data-t="circuit" aria-selected="true" tabindex="0">电路图</div>
-      <div class="tab out" role="tab" data-t="result"  aria-selected="false" tabindex="0">运行结果</div>
+      <div class="tab out" role="tab" data-t="circuit" aria-selected="true" tabindex="0" data-i18n="tabCircuit">电路图</div>
+      <div class="tab out" role="tab" data-t="result"  aria-selected="false" tabindex="0" data-i18n="tabResult">运行结果</div>
       <div class="tab out" role="tab" data-t="qasm"    aria-selected="false" tabindex="0">QASM</div>
-      <div class="tab out" role="tab" data-t="explain" aria-selected="false" tabindex="0">这是啥？</div>
+      <div class="tab out" role="tab" data-t="explain" aria-selected="false" tabindex="0" data-i18n="tabExplain">这是啥？</div>
     </div>
     <div class="panel in" id="panel"><span class="muted">还没有电路。上面说一句话，然后点「开始构建」。</span></div>
 
     <div class="status">
-      <span class="cell in" id="status">就绪</span>
-      <span class="cell in" id="fid">保真度 —</span>
+      <span class="cell in" id="status" data-i18n="ready2">就绪</span>
+      <span class="cell in" id="fid" data-i18n="fidNone">保真度 —</span>
     </div>
   </div>
 </div>
 </div>
   </div>
 </main>
+
+
+<div id="tutorial" class="tutorial-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+  <div class="tutorial">
+    <div class="tutorial-bar">
+      <span class="t" id="tutorial-title" data-i18n="tutTitle">入门教程 · 从零看懂量子计算</span>
+      <button class="tutorial-close" id="tutorial-x" aria-label="关闭教程">✕</button>
+    </div>
+    <div class="tutorial-body">
+
+      <section class="tutorial-step on" data-step="0">
+        <h2>一、普通电脑是怎么算的？</h2>
+        <p class="tutorial-lede">先从你已经熟悉的东西说起。</p>
+        <p>你现在用的电脑，把所有信息都存成一长串 <b>0</b> 和 <b>1</b>。每一个 0 或 1 叫一个「比特」。照片、音乐、这段文字，最后都是 0 和 1。</p>
+        <p>关键在于：<b>一个普通比特，任何时刻只能是 0 或者 1，二选一</b>。就像一枚放在桌上的硬币，要么正面朝上，要么反面朝上。</p>
+        <div class="tutorial-note">如果要试遍 3 个比特的所有组合（000、001、010……111 共 8 种），普通电脑只能一种一种试，试 8 次。</div>
+      </section>
+
+      <section class="tutorial-step" data-step="1">
+        <h2>二、量子比特特别在哪？</h2>
+        <p class="tutorial-lede">一句话：它可以「同时是 0 和 1」。</p>
+        <p>想象把硬币<b>立起来快速旋转</b>。在它转的时候，你没法说它是正面还是反面——它处在两种可能的混合里。这种状态叫<b>叠加</b>。</p>
+        <div class="coin">
+          <div class="coin-item"><b>普通比特</b><span>桌上的硬币：不是正面，就是反面。</span></div>
+          <div class="coin-item"><b>量子比特</b><span>旋转中的硬币：两种可能同时存在，直到你伸手按住它。</span></div>
+        </div>
+        <p>「伸手按住」就是<b>测量</b>。一测量，旋转停止，你只会看到一个确定的 0 或 1，叠加就消失了。</p>
+        <p>所以 3 个量子比特可以同时承载 8 种组合。比特越多，这个数字翻倍得越快——50 个量子比特能同时表示的组合数，超过一千万亿种。</p>
+        <div class="tutorial-note">这就是量子计算被看好的原因：某些问题（药物分子模拟、材料设计、密码分析）用普通电脑要算几万年，量子计算机原理上快得多。</div>
+      </section>
+
+      <section class="tutorial-step" data-step="2">
+        <h2>三、还有一个关键：纠缠</h2>
+        <p class="tutorial-lede">两个量子比特可以「绑定」在一起。</p>
+        <p>把两枚旋转的硬币<b>纠缠</b>起来之后，它们会变成这样：你按住其中一枚看到正面，另一枚<b>必定</b>也是正面；你看到反面，另一枚必定也是反面。</p>
+        <p>但在你去看之前，谁也不知道会是哪一面——它们各自都是 50/50。神奇的是<b>关联性</b>：结果永远一致，从不出现一正一反。</p>
+        <div class="tutorial-figure"><pre>测 1000 次，三个纠缠的量子比特会得到：
+
+  000  ████████████████████  约 500 次
+  111  ████████████████████  约 500 次
+
+  001、010、101……  一次都不会出现</pre></div>
+        <p>你在这个工具里输入「让三个量子比特纠缠在一起」，看到的就是上面这张图。</p>
+      </section>
+
+      <section class="tutorial-step" data-step="3">
+        <h2>四、为什么要「写」量子程序？</h2>
+        <p class="tutorial-lede">因为量子计算机不会自己知道你想算什么。</p>
+        <p>量子比特本身只是一堆会旋转的硬币。要让它们算出有用的东西，你得<b>按顺序告诉它每一步做什么</b>：先让第 1 枚转起来，再把第 2 枚和它绑定……</p>
+        <p>这份「操作说明书」就是<b>量子程序</b>，也叫<b>量子电路</b>。它和菜谱很像：食材是量子比特，步骤是一个个<b>量子门</b>，最后<b>测量</b>就是尝一口看做成了什么。</p>
+        <ul>
+          <li><b>H 门</b>（阿达马门）——让一个量子比特开始「旋转」，进入叠加</li>
+          <li><b>CX 门</b>（受控非门）——把两个量子比特绑定起来，产生纠缠</li>
+          <li><b>测量</b>——按住硬币，读出最终的 0 或 1</li>
+        </ul>
+        <div class="tutorial-note">常用的门就十几个。你不需要背它们——这个工具会根据你的大白话自动挑选。</div>
+      </section>
+
+      <section class="tutorial-step" data-step="4">
+        <h2>五、量子程序长什么样？</h2>
+        <p class="tutorial-lede">下面这段就是完整的「三比特纠缠」程序。</p>
+        <div class="tutorial-figure"><pre>OPENQASM 2.0;          ← 用的是哪种语言
+include "qelib1.inc";  ← 载入标准门库
+qreg q[3];             ← 准备 3 个量子比特
+creg c[3];             ← 准备 3 个格子放测量结果
+h q[0];                ← 让第 1 个转起来（叠加）
+cx q[0],q[1];          ← 把第 2 个和第 1 个绑定（纠缠）
+cx q[0],q[2];          ← 把第 3 个也绑定进来
+measure q -> c;        ← 全部测量，结果存进格子</pre></div>
+        <p>这种写法叫 <b>OpenQASM</b>，是量子领域通用的「汇编语言」。八行，没有循环，没有函数，从上往下依次执行。</p>
+        <p><b>好消息是：你不用自己写。</b>在上面的输入框里说一句「让三个量子比特纠缠在一起」，助手会生成这段代码、跑一遍验证它是否正确，再把电路图和结果解释给你听。</p>
+        <div class="tutorial-note">建议现在就试试：关掉本教程，点「我不知道问些什么」看几个例子，随便挑一个点进去。</div>
+      </section>
+
+    </div>
+    <div class="tutorial-foot">
+      <span class="tutorial-dots" id="tutorial-dots" aria-hidden="true"></span>
+      <button id="tutorial-prev" data-i18n="prev">上一步</button>
+      <button id="tutorial-next" data-i18n="next">下一步</button>
+    </div>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -414,7 +571,7 @@ function busy(on){
   $("progress").classList.toggle("on", on);
   $("bar").innerHTML = on ? "<i></i>".repeat(14) : "";
   $("go").disabled = on;
-  $("status").textContent = on ? "正在处理…" : "就绪";
+  $("status").textContent = on ? I18N[LANG].working : I18N[LANG].ready2;
 }
 function esc(s){ return String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
 function escAttr(s){ return esc(s).replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
@@ -657,21 +814,21 @@ function render(tab){
       bindCircuit(p);
     }
     else if(state.diagram) p.innerHTML = `<pre>${esc(state.diagram)}</pre>`;
-    else p.innerHTML = '<span class="muted">还没有电路。</span>';
+    else p.innerHTML = `<span class="muted">${I18N[LANG].emptyCircuit}</span>`;
   }
   else if(tab === "result"){
     const items = circuitItems();
     p.innerHTML = items.length ? items.map(item => item.ok
       ? taskBlockHtml(taskIdNumber(item.task_id), "运行结果", expectedResultText(item.expected_probabilities), histogram(item.probabilities))
       : taskBlockHtml(taskIdNumber(item.task_id), "运行失败", item.request, `<p class="muted">${esc(item.message)}</p>`)
-    ).join("") : '<span class="muted">还没有运行结果。</span>';
+    ).join("") : `<span class="muted">${I18N[LANG].emptyResult}</span>`;
   }
   else if(tab === "qasm"){
     const items = circuitItems();
     p.innerHTML = items.length ? items.map(item => item.ok
       ? taskBlockHtml(taskIdNumber(item.task_id), "QASM", item.request, `<pre>${esc(item.qasm)}</pre>`)
       : taskBlockHtml(taskIdNumber(item.task_id), "QASM 未生成", item.request, `<p class="muted">${esc(item.message)}</p>`)
-    ).join("") : '<span class="muted">还没有 QASM。</span>';
+    ).join("") : `<span class="muted">${I18N[LANG].emptyQasm}</span>`;
   }
   else if(state.concept && circuitItems().length && hasCompoundGoals()){
     const knowledge = (state.tasks || []).find(task => task.kind !== "circuit_build" && task.kind !== "backend_select");
@@ -685,7 +842,7 @@ function render(tab){
   else if(state.concept && !state.circuitData) p.innerHTML = conceptLessonHtml(state.concept);
   else if(state.explanation) p.innerHTML = circuitLessonHtml(state.explanation);
   else p.innerHTML = state.explain ? `${plainAnswerHtml(state.explain)}${basisHtml(state.basis)}`
-      : '<span class="muted">构建一个电路后，这里会用大白话解释它在做什么。</span>';
+      : `<span class="muted">${I18N[LANG].emptyExplain}</span>`;
 }
 
 document.querySelectorAll(".tab").forEach(t => {
@@ -708,6 +865,208 @@ $("prompt").addEventListener("keydown", e => {
   if((e.ctrlKey || e.metaKey) && e.key === "Enter") build();
 });
 $("go").addEventListener("click", build);
+
+/* 中英切换：只翻译界面文案与教程，Agent 回答仍跟随你输入的语言。 */
+const I18N = {
+  en: {
+    ready: "LOCAL UI READY", eyebrow: "QUANTUM ACCESSIBILITY FOR EVERYONE",
+    launchDemo: "\u25b6 LAUNCH DEMO", getStarted: "GET STARTED \u2192",
+    microcopy: "No quantum background needed \u00b7 click GET STARTED to begin",
+    heroTitle: "Build a quantum circuit<br>with one sentence",
+    heroLede: "From plain language to cross-platform results \u2014 LoomQ parses, generates, runs and verifies for you.",
+    winTitle: "LoomQ Quantum Assistant \u2014 build circuits in plain language",
+    mFile: "<u>F</u>ile", mEdit: "<u>E</u>dit", mView: "<u>V</u>iew", mHelp: "<u>H</u>elp",
+    legend: "What do you want to do?", promptLabel: "Just say it in plain words \u2014 no quantum knowledge needed:",
+    promptPh: "e.g. entangle three qubits together",
+    go: "Build it", demo: "I don't know what to ask",
+    exTitle: "<strong>Try one of these:</strong>",
+    ex1: "Three-qubit entanglement", ex2: "Bell state",
+    ex3: "Pick a platform", ex4: "What is entanglement?",
+    tabCircuit: "Circuit", tabResult: "Results", tabExplain: "What is this?",
+    ready2: "Ready", working: "Working\u2026", fidNone: "Fidelity \u2014", fid: "Fidelity",
+    emptyCircuit: "No circuit yet.", emptyResult: "No results yet.",
+    emptyQasm: "No QASM yet.",
+    emptyExplain: "Build a circuit and this tab will explain it in plain language.",
+    tutTitle: "Getting Started \u00b7 Quantum computing from zero",
+    prev: "Back", next: "Next", finish: "Start using it",
+    langBtn: "\u4e2d\u6587",
+  },
+  zh: {
+    ready: "LOCAL UI READY", eyebrow: "QUANTUM ACCESSIBILITY FOR EVERYONE",
+    launchDemo: "\u25b6 LAUNCH DEMO", getStarted: "GET STARTED \u2192",
+    microcopy: "\u65e0\u9700\u91cf\u5b50\u57fa\u7840 \u00b7 \u70b9\u51fb GET STARTED \u5f00\u59cb\u6784\u5efa",
+    heroTitle: "\u7528\u4e00\u53e5\u8bdd\uff0c<br>\u9020\u4e00\u6761\u91cf\u5b50\u7535\u8def",
+    heroLede: "\u4ece\u81ea\u7136\u8bed\u8a00\u5230\u8de8\u5e73\u53f0\u8fd0\u884c\u7ed3\u679c\uff0cLoomQ \u81ea\u52a8\u5b8c\u6210\u89e3\u6790\u3001\u751f\u6210\u3001\u6267\u884c\u4e0e\u9a8c\u8bc1\u3002",
+    winTitle: "LoomQ \u91cf\u5b50\u52a9\u624b \u2014 \u7528\u5927\u767d\u8bdd\u9020\u91cf\u5b50\u7535\u8def",
+    mFile: "<u>\u6587</u>\u4ef6", mEdit: "<u>\u7f16</u>\u8f91", mView: "<u>\u67e5</u>\u770b", mHelp: "<u>\u5e2e</u>\u52a9",
+    legend: "\u60f3\u505a\u4ec0\u4e48\uff1f", promptLabel: "\u7528\u5927\u767d\u8bdd\u8bf4\u5c31\u884c\uff0c\u4e0d\u9700\u8981\u61c2\u91cf\u5b50\uff1a",
+    promptPh: "\u4f8b\u5982\uff1a\u8ba9\u4e09\u4e2a\u91cf\u5b50\u6bd4\u7279\u7ea0\u7f20\u5728\u4e00\u8d77",
+    go: "\u5f00\u59cb\u6784\u5efa", demo: "\u6211\u4e0d\u77e5\u9053\u95ee\u4e9b\u4ec0\u4e48",
+    exTitle: "<strong>\u8bd5\u8bd5\u8fd9\u4e9b\uff1a</strong>",
+    ex1: "\u4e09\u6bd4\u7279\u7ea0\u7f20", ex2: "\u8d1d\u5c14\u6001",
+    ex3: "\u9009\u5e73\u53f0", ex4: "\u8ba4\u8bc6\u91cf\u5b50\u7ea0\u7f20",
+    tabCircuit: "\u7535\u8def\u56fe", tabResult: "\u8fd0\u884c\u7ed3\u679c", tabExplain: "\u8fd9\u662f\u5565\uff1f",
+    ready2: "\u5c31\u7eea", working: "\u6b63\u5728\u5904\u7406\u2026", fidNone: "\u4fdd\u771f\u5ea6 \u2014", fid: "\u4fdd\u771f\u5ea6",
+    emptyCircuit: "\u8fd8\u6ca1\u6709\u7535\u8def\u3002", emptyResult: "\u8fd8\u6ca1\u6709\u8fd0\u884c\u7ed3\u679c\u3002",
+    emptyQasm: "\u8fd8\u6ca1\u6709 QASM\u3002",
+    emptyExplain: "\u6784\u5efa\u4e00\u4e2a\u7535\u8def\u540e\uff0c\u8fd9\u91cc\u4f1a\u7528\u5927\u767d\u8bdd\u89e3\u91ca\u5b83\u5728\u505a\u4ec0\u4e48\u3002",
+    tutTitle: "\u5165\u95e8\u6559\u7a0b \u00b7 \u4ece\u96f6\u770b\u61c2\u91cf\u5b50\u8ba1\u7b97",
+    prev: "\u4e0a\u4e00\u6b65", next: "\u4e0b\u4e00\u6b65", finish: "\u5f00\u59cb\u4f7f\u7528",
+    langBtn: "EN",
+  },
+};
+
+const TUTORIAL_EN = [
+`<h2>1. How do ordinary computers work?</h2>
+<p class="tutorial-lede">Let's start with something you already know.</p>
+<p>The computer you're using stores everything as a long string of <b>0</b>s and <b>1</b>s. Each 0 or 1 is called a "bit". Photos, music, this very sentence — all of it is 0s and 1s underneath.</p>
+<p>Here's the key point: <b>an ordinary bit can only be 0 or 1 at any moment — one or the other</b>. Like a coin lying on a table: heads up, or tails up.</p>
+<div class="tutorial-note">To try every combination of 3 bits (000, 001, 010 … 111 — eight in total), an ordinary computer must try them one at a time: eight attempts.</div>`,
+`<h2>2. What makes a qubit different?</h2>
+<p class="tutorial-lede">In one sentence: it can be 0 and 1 at the same time.</p>
+<p>Picture that coin <b>spinning on its edge</b>. While it spins, you can't say it's heads or tails — it's a blend of both possibilities. This is called <b>superposition</b>.</p>
+<div class="coin">
+  <div class="coin-item"><b>Ordinary bit</b><span>A coin on the table: either heads, or tails.</span></div>
+  <div class="coin-item"><b>Qubit</b><span>A spinning coin: both possibilities at once, until you slap your hand down on it.</span></div>
+</div>
+<p>Slapping your hand down is <b>measurement</b>. The spinning stops, you see one definite 0 or 1, and the superposition is gone.</p>
+<p>So 3 qubits can hold all 8 combinations at once. The more qubits, the faster this doubles — 50 qubits can represent over a quadrillion combinations simultaneously.</p>
+<div class="tutorial-note">That's why quantum computing matters: some problems (drug molecule simulation, materials design, cryptanalysis) would take an ordinary computer millennia, but are far faster in principle on a quantum machine.</div>`,
+`<h2>3. The other key idea: entanglement</h2>
+<p class="tutorial-lede">Two qubits can be "tied together".</p>
+<p>Once you <b>entangle</b> two spinning coins, this happens: if you stop one and see heads, the other is <b>guaranteed</b> to be heads too. Tails, and the other is certainly tails.</p>
+<p>But before you look, nobody knows which it will be — each is still 50/50. The magic is the <b>correlation</b>: the results always match, and you never get one heads with one tails.</p>
+<div class="tutorial-figure"><pre>Measure 1000 times, three entangled qubits give:
+
+  000  ████████████████████  about 500 times
+  111  ████████████████████  about 500 times
+
+  001, 010, 101 …  never appear at all</pre></div>
+<p>Type "entangle three qubits together" into this tool and the chart above is exactly what you'll see.</p>`,
+`<h2>4. Why do you have to "write" a quantum program?</h2>
+<p class="tutorial-lede">Because the machine has no idea what you want to compute.</p>
+<p>Qubits by themselves are just a pile of spinnable coins. To make them compute something useful, you must <b>tell them what to do, step by step</b>: spin the first one, tie the second to it, and so on.</p>
+<p>That set of instructions is a <b>quantum program</b>, also called a <b>quantum circuit</b>. It's much like a recipe: the ingredients are qubits, the steps are <b>quantum gates</b>, and the final <b>measurement</b> is tasting what you made.</p>
+<ul>
+  <li><b>H gate</b> (Hadamard) — start a qubit "spinning", putting it into superposition</li>
+  <li><b>CX gate</b> (controlled-NOT) — tie two qubits together, creating entanglement</li>
+  <li><b>Measure</b> — stop the coin and read out the final 0 or 1</li>
+</ul>
+<div class="tutorial-note">There are only a dozen or so gates in common use. You don't need to memorise them — this tool picks them for you from your plain-language description.</div>`,
+`<h2>5. What does a quantum program look like?</h2>
+<p class="tutorial-lede">Below is the complete "three-qubit entanglement" program.</p>
+<div class="tutorial-figure"><pre>OPENQASM 2.0;          ← which language this is
+include "qelib1.inc";  ← load the standard gate library
+qreg q[3];             ← prepare 3 qubits
+creg c[3];             ← prepare 3 slots for the results
+h q[0];                ← spin up the 1st one (superposition)
+cx q[0],q[1];          ← tie the 2nd to the 1st (entanglement)
+cx q[0],q[2];          ← tie the 3rd in as well
+measure q -> c;        ← measure everything into the slots</pre></div>
+<p>This notation is called <b>OpenQASM</b>, the common "assembly language" of quantum computing. Eight lines, no loops, no functions — it runs top to bottom.</p>
+<p><b>The good news: you don't have to write it yourself.</b> Type "entangle three qubits together" in the box above and the assistant will generate this code, run it to check it's correct, then explain the circuit and results to you.</p>
+<div class="tutorial-note">Try it now: close this tutorial, click "I don't know what to ask" to see some examples, and pick any one.</div>`,
+];
+
+let LANG = localStorage.getItem("loomq-lang") || "zh";
+const TUTORIAL_ZH = [];
+
+function applyLanguage(){
+  const t = I18N[LANG];
+  document.documentElement.lang = LANG === "en" ? "en" : "zh-CN";
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const v = t[el.dataset.i18n];
+    if(v !== undefined) el.innerHTML = v;
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+    const v = t[el.dataset.i18nPh];
+    if(v !== undefined) el.placeholder = v;
+  });
+  const h1 = document.querySelector(".hero-copy h1");
+  if(h1) h1.innerHTML = t.heroTitle;
+  const lede = document.querySelector(".hero-copy > p:not(.eyebrow):not(.microcopy)");
+  if(lede) lede.innerHTML = t.heroLede;
+  const lg = document.querySelector("#examples legend, fieldset legend");
+  if(lg) lg.textContent = t.legend;
+  const pl = document.querySelector('label[for="prompt"]');
+  if(pl) pl.textContent = t.promptLabel;
+  const exHead = document.querySelector("#examples > strong, #examples strong");
+  if(exHead) exHead.textContent = t.exTitle.replace(/<[^>]+>/g, "");
+  // tutorial body
+  const steps = [...document.querySelectorAll(".tutorial-step")];
+  if(!TUTORIAL_ZH.length) steps.forEach(s => TUTORIAL_ZH.push(s.innerHTML));
+  steps.forEach((s, i) => {
+    const src = LANG === "en" ? TUTORIAL_EN[i] : TUTORIAL_ZH[i];
+    if(src) s.innerHTML = src;
+  });
+  [...document.querySelectorAll(".lang-toggle")].forEach(b => b.textContent = t.langBtn);
+  // 重绘当前面板，让空状态文案跟随语言切换。
+  const active = document.querySelector('.tab[aria-selected="true"]');
+  if(active && typeof render === "function") render(active.dataset.t);
+}
+
+function toggleLanguage(){
+  LANG = LANG === "zh" ? "en" : "zh";
+  localStorage.setItem("loomq-lang", LANG);
+  applyLanguage();
+}
+
+/* 入门教程：五步引导，键盘可达，Esc 关闭 */
+(function(){
+  const modal = $("tutorial");
+  const steps = [...modal.querySelectorAll(".tutorial-step")];
+  const dots = $("tutorial-dots");
+  const prev = $("tutorial-prev");
+  const next = $("tutorial-next");
+  let at = 0, lastFocus = null;
+
+  dots.innerHTML = steps.map(() => "<i></i>").join("");
+  const marks = [...dots.querySelectorAll("i")];
+
+  function show(index){
+    at = Math.max(0, Math.min(steps.length - 1, index));
+    steps.forEach((s, i) => s.classList.toggle("on", i === at));
+    marks.forEach((m, i) => m.classList.toggle("on", i === at));
+    prev.disabled = at === 0;
+    next.textContent = at === steps.length - 1 ? "开始使用" : "下一步";
+    modal.querySelector(".tutorial-body").scrollTop = 0;
+  }
+
+  function open(){
+    lastFocus = document.activeElement;
+    modal.hidden = false;
+    show(0);
+    next.focus();
+  }
+
+  function close(){
+    modal.hidden = true;
+    if(lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  $("help-menu").addEventListener("click", open);
+  $("help-menu").addEventListener("keydown", e => {
+    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); open(); }
+  });
+  $("tutorial-x").addEventListener("click", close);
+  prev.addEventListener("click", () => show(at - 1));
+  next.addEventListener("click", () => {
+    if(at === steps.length - 1){ close(); expandBuilder(false, true); }
+    else show(at + 1);
+  });
+  // 点遮罩关闭，但点内容区不关。
+  modal.addEventListener("click", e => { if(e.target === modal) close(); });
+  document.addEventListener("keydown", e => {
+    if(modal.hidden) return;
+    if(e.key === "Escape"){ close(); }
+    else if(e.key === "ArrowRight" && at < steps.length - 1){ show(at + 1); }
+    else if(e.key === "ArrowLeft" && at > 0){ show(at - 1); }
+  });
+})();
+
+[...document.querySelectorAll(".lang-toggle")].forEach(b =>
+  b.addEventListener("click", toggleLanguage));
+applyLanguage();
 
 function expandBuilder(runDemo=false, focusPrompt=false, updateRoute=true){
   $("landing").classList.add("builder-mode");
@@ -751,7 +1110,7 @@ async function build(){
         {k:"ok", t:`任务 ${knowledgeNumber}：理解问题已完成`},
         {k:"err", t:`任务 ${taskNumber("circuit_build")}：候选电路未通过目标校验`}
       ]);
-      $("fid").textContent = "保真度 —";
+      $("fid").textContent = I18N[LANG].fidNone;
       document.querySelectorAll(".tab").forEach(x =>
         x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
       render("explain");
@@ -761,14 +1120,14 @@ async function build(){
       steps(intentLabel && data.concept
         ? [{k:"ok", t:`听懂了：${intentLabel}`}, {k:"ok", t:"已生成图解"}]
         : [{k:"ok", t:"已回答你的问题"}, {k:"err", t:"图解暂时不可用，已保留基础回答"}]);
-      $("fid").textContent = "保真度 —";
+      $("fid").textContent = I18N[LANG].fidNone;
       document.querySelectorAll(".tab").forEach(x =>
         x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
       render("explain");
     } else if(data.kind === "backend"){
       state = {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:data.explain, explanation:null, concept:null, tasks:data.tasks || null, circuits:null, backend:data.backend, basis:data.basis || null};
       steps([{k:"ok", t:"听懂了：你在挑运行平台"}, {k:"ok", t:"已按官方后端能力表筛选"}]);
-      $("fid").textContent = "保真度 —";
+      $("fid").textContent = I18N[LANG].fidNone;
       document.querySelectorAll(".tab").forEach(x =>
         x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
       render("explain");
@@ -794,13 +1153,13 @@ async function build(){
       steps(list);
       const passedCircuits = circuitItems().filter(item => item.ok).length;
       $("fid").textContent = circuitItems().length > 1 ? `${passedCircuits}/${circuitItems().length} 电路通过`
-        : data.fidelity !== null ? `保真度 ${data.fidelity.toFixed(2)}` : "保真度 —";
+        : data.fidelity !== null ? `${I18N[LANG].fid} ${data.fidelity.toFixed(2)}` : I18N[LANG].fidNone;
       document.querySelectorAll(".tab").forEach(x =>
         x.setAttribute("aria-selected", String(x.dataset.t === "circuit")));
       render("circuit");
     } else {
       steps([{k:"err", t:data.message}]);
-      $("fid").textContent = "保真度 —";
+      $("fid").textContent = I18N[LANG].fidNone;
       if(data.qasm){ state.qasm = data.qasm; }
     }
   }catch(err){
