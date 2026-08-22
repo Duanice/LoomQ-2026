@@ -14,6 +14,8 @@ dependencies = []
 braket = ["amazon-braket-sdk==1.110.1"]
 spinq = ["spinqit==0.2.4"]
 originq = ["pyqpanda==3.8.5"]
+# 本源云真机走 pyqpanda3（与本地模拟器的 pyqpanda 是两个不同的包）。
+originq-cloud = ["pyqpanda3==0.4.0"]
 
 [dependency-groups]
 dev = []

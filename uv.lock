@@ -470,6 +470,15 @@ wheels = [
 ]
 
 [[package]]
+name = "graphviz"
+version = "0.21"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/b3/3ac91e9be6b761a4b30d66ff165e54439dcd48b83f4e20d644867215f6ca/graphviz-0.21.tar.gz", hash = "sha256:20743e7183be82aaaa8ad6c93f8893c923bd6658a04c32ee115edb3c8a835f78", size = 200434, upload-time = "2025-06-15T09:35:05.824Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/4c/e0ce1ef95d4000ebc1c11801f9b944fa5910ecc15b5e351865763d8657f8/graphviz-0.21-py3-none-any.whl", hash = "sha256:54f33de9f4f911d7e84e4191749cac8cc5653f815b06738c54db9a15ab8b1e42", size = 47300, upload-time = "2025-06-15T09:35:04.433Z" },
+]
+
+[[package]]
 name = "idna"
 version = "3.18"
 source = { registry = "https://pypi.org/simple" }
@@ -596,6 +605,9 @@ braket = [
 originq = [
     { name = "pyqpanda" },
 ]
+originq-cloud = [
+    { name = "pyqpanda3" },
+]
 spinq = [
     { name = "spinqit" },
 ]
@@ -604,9 +616,10 @@ spinq = [
 requires-dist = [
     { name = "amazon-braket-sdk", marker = "extra == 'braket'", specifier = "==1.110.1" },
     { name = "pyqpanda", marker = "extra == 'originq'", specifier = "==3.8.5" },
+    { name = "pyqpanda3", marker = "extra == 'originq-cloud'", specifier = "==0.4.0" },
     { name = "spinqit", marker = "extra == 'spinq'", specifier = "==0.2.4" },
 ]
-provides-extras = ["braket", "spinq", "originq"]
+provides-extras = ["braket", "spinq", "originq", "originq-cloud"]
 
 [package.metadata.requires-dev]
 dev = []
@@ -1167,6 +1180,26 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f8/9d/c9e758e3cfdc5c72195e55d00aaa89fa7b897c4b9559db0b0186eb6fdbac/pyqpanda-3.8.5-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:4dfee5edf465267be2317c5144b2ff62806f445aee4006fb331e6ce3da2a7215", size = 9040018, upload-time = "2025-05-13T06:02:37.83Z" },
     { url = "https://files.pythonhosted.org/packages/15/14/e61cd68c3991e026c8f183ef50badefcf6c2d837655ace4dfe544bd4a8b4/pyqpanda-3.8.5-cp310-none-manylinux1_x86_64.whl", hash = "sha256:fc15edac7f2f4b3dd671e515ceff94cd9253f5193e394a68c32288f5eb87018e", size = 12388399, upload-time = "2025-05-13T06:03:12.211Z" },
     { url = "https://files.pythonhosted.org/packages/f2/dc/47c07f84d24b7b450966b05940139a5df84fd34a1059a0d6ec4e979db66b/pyqpanda-3.8.5-cp310-none-win_amd64.whl", hash = "sha256:c2135eee02c751f875f7d385c3457c0fa89298ed4251a4c67118471383e6eb1a", size = 8392196, upload-time = "2025-05-13T06:03:35.503Z" },
+]
+
+[[package]]
+name = "pyqpanda3"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cython" },
+    { name = "graphviz" },
+    { name = "matplotlib" },
+    { name = "mypy" },
+    { name = "networkx" },
+    { name = "numpy" },
+    { name = "scipy" },
+    { name = "setuptools" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/61/e0/ddf400c1d733aa80ed32e1076117b64f308e1b4b3875ad04f438ae38355d/pyqpanda3-0.4.0-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:09191a027377d2ec792092a0b67ea1941db6d3293fff5f469991c3d49cb15696", size = 17561242, upload-time = "2026-07-08T07:06:26.459Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/c8/06503c7627a6d97cf42a70a5deaa312d184e241d7dc40c25db8806322aa9/pyqpanda3-0.4.0-cp310-none-manylinux1_x86_64.whl", hash = "sha256:9f47193db180b742b00f3f7c1e0d6e9356a1281ac65ff94b8e8450ba3717d9c2", size = 30862172, upload-time = "2026-07-08T07:16:10.474Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/15/b0a0ec65c6ff2c5e55578d557196f14e66cb98d2ca99ff90a8c07b46abcb/pyqpanda3-0.4.0-cp310-none-win_amd64.whl", hash = "sha256:33134187a203cce23ca56a1724c47e4969c74e8552d41b472bed699c022ea9d2", size = 16725533, upload-time = "2026-07-08T07:17:01.337Z" },
 ]
 
 [[package]]
