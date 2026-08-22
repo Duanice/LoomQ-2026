@@ -37,6 +37,17 @@ DECOMPOSE_SKILL_PATH = (
     / "SKILL.md"
 )
 DECOMPOSE_SKILL_PROMPT = DECOMPOSE_SKILL_PATH.read_text(encoding="utf-8")
+
+# 界面语言开关：技能提示词本身以简体中文为准，需要英文时追加一条覆盖指令。
+# 只影响 UI 的解释文案，不参与 agent_chat 的客观评分路径。
+LANGUAGE_DIRECTIVE = {
+    "en": (
+        "\n\nLANGUAGE OVERRIDE: ignore every instruction above that asks for "
+        "Simplified Chinese. Write all human-readable string values in natural "
+        "English instead. Keep every JSON key, enum value, identifier, gate name "
+        "and operation_id exactly as specified — translate only prose."
+    ),
+}
 MAX_ATTEMPTS = 2
 CALL_TIMEOUT_SECONDS = 30.0
 
@@ -78,12 +89,23 @@ def _object(value: Any, fields: set[str], label: str) -> dict[str, Any]:
     return value
 
 
+# 同样的意思，英文所需字符数约为中文的 2~2.5 倍；长度上限按语言缩放，
+# 否则英文解释会稳定超限并退化成兜底文案。
+_LENGTH_SCALE = {"en": 2.5}
+_ACTIVE_SCALE = 1.0
+
+
+def _scaled(limit: int) -> int:
+    return int(limit * _ACTIVE_SCALE)
+
+
 def _text(value: Any, limit: int, label: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{label} must be a non-empty string")
     value = value.strip()
-    if len(value) > limit:
-        raise ValueError(f"{label} exceeds {limit} characters")
+    allowed = _scaled(limit)
+    if len(value) > allowed:
+        raise ValueError(f"{label} exceeds {allowed} characters")
     return value
 
 
@@ -267,9 +289,12 @@ def _run_skill(
     skill_prompt: str,
     data: dict[str, Any],
     validate: Callable[[Any], dict[str, Any]],
+    language: str = "zh",
 ) -> dict[str, Any]:
+    global _ACTIVE_SCALE
+    _ACTIVE_SCALE = _LENGTH_SCALE.get(language, 1.0)
     messages = [
-        {"role": "system", "content": skill_prompt},
+        {"role": "system", "content": skill_prompt + LANGUAGE_DIRECTIVE.get(language, "")},
         {
             "role": "user",
             "content": json.dumps(data, ensure_ascii=False, separators=(",", ":")),
@@ -306,6 +331,7 @@ def explain_circuit(
     circuit: Circuit,
     probabilities: dict[str, float],
     fidelity: float | None,
+    language: str = "zh",
 ) -> dict[str, Any]:
     """Explain a trusted circuit through the application skill and validate it."""
 
@@ -314,26 +340,31 @@ def explain_circuit(
         SKILL_PROMPT,
         data,
         lambda value: _validate_circuit(value, len(circuit.operations)),
+        language,
     )
 
 
-def explain_question(question: str, draft_answer: str) -> dict[str, Any]:
+def explain_question(
+    question: str, draft_answer: str, language: str = "zh"
+) -> dict[str, Any]:
     """Classify an explanatory request and create a validated visual lesson."""
 
     return _run_skill(
         QUESTION_SKILL_PROMPT,
         {"question": question, "draft_answer": draft_answer},
         _validate_lesson,
+        language,
     )
 
 
-def decompose_request(question: str) -> dict[str, Any]:
+def decompose_request(question: str, language: str = "zh") -> dict[str, Any]:
     """Lock independently satisfiable tasks before downstream rendering."""
 
     return _run_skill(
         DECOMPOSE_SKILL_PROMPT,
         {"question": question},
         _validate_decomposition,
+        language,
     )
 
 

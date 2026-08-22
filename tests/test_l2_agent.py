@@ -919,9 +919,13 @@ class L2AgentTests(unittest.TestCase):
         self.assertIn("function circuitItems()", ui_source)
         self.assertIn("circuitItems().map", ui_source)
         self.assertIn("circuitItems().forEach", ui_source)
-        self.assertIn('taskBlockHtml(knowledgeNumber, "理解问题"', ui_source)
+        # 文案已改为 I18N 查表（中英切换），断言仍确保不是关键词分支渲染。
         self.assertIn(
-            'taskBlockHtml(taskIdNumber(item.task_id), "生成电路"',
+            "taskBlockHtml(knowledgeNumber, I18N[LANG].understandQ",
+            ui_source,
+        )
+        self.assertIn(
+            "taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].genCircuit",
             ui_source,
         )
         self.assertIn("state.tasks", ui_source)

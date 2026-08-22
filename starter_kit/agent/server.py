@@ -52,9 +52,9 @@ except ImportError:  # 直接以脚本方式运行时。
 UI_PATH = Path(__file__).resolve().parent / "ui.html"
 
 
-def _decompose(prompt: str) -> dict | None:
+def _decompose(prompt: str, language: str = "zh") -> dict | None:
     try:
-        return decompose_request(prompt)
+        return decompose_request(prompt, language)
     except (RuntimeError, ValueError) as exc:
         print(f"[LoomQ task decomposition fallback] {exc}")
         return None
@@ -89,6 +89,7 @@ def _circuit_response(
     lesson: dict | None = None,
     task_plan: dict | None = None,
     expand_tasks: bool = True,
+    language: str = "zh",
 ) -> dict:
     result = response.verification or verify(qasm)
     if not result.ok or result.circuit is None:
@@ -104,18 +105,21 @@ def _circuit_response(
             result.circuit,
             result.probabilities,
             result.fidelity,
+            language,
         )
     except (RuntimeError, ValueError) as exc:
         print(f"[LoomQ circuit explanation fallback] {exc}")
         explanation = None
-    task_plan = task_plan or _decompose(prompt)
+    task_plan = task_plan or _decompose(prompt, language)
     knowledge_question = _knowledge_question(task_plan)
     if lesson is None and knowledge_question:
         try:
             answer = response.plan.get("answer") if response.plan else None
             lesson = explain_question(
                 knowledge_question,
-                answer if isinstance(answer, str) and answer.strip() else "请直接准确回答这个知识问题。",
+                answer if isinstance(answer, str) and answer.strip()
+                else "请直接准确回答这个知识问题。",
+                language,
             )
         except (RuntimeError, ValueError) as exc:
             print(f"[LoomQ visual lesson fallback] {exc}")
@@ -155,7 +159,9 @@ def _circuit_response(
     first_task = circuit_tasks[0]
     circuits = [_circuit_item(payload, first_task)]
     if expand_tasks:
-        circuits.extend(_run_circuit_task(task) for task in circuit_tasks[1:])
+        circuits.extend(
+            _run_circuit_task(task, language) for task in circuit_tasks[1:]
+        )
     payload["circuits"] = circuits
     payload["all_tasks_ok"] = all(item["ok"] for item in circuits)
     return payload
@@ -182,7 +188,7 @@ def _circuit_item(payload: dict, task: dict) -> dict:
     }
 
 
-def _run_circuit_task(task: dict) -> dict:
+def _run_circuit_task(task: dict, language: str = "zh") -> dict:
     try:
         response = agent_result(task["request"])
         qasm = extract_qasm(response.text)
@@ -204,6 +210,7 @@ def _run_circuit_task(task: dict) -> dict:
             qasm,
             task_plan={"label": task["request"], "tasks": [task]},
             expand_tasks=False,
+            language=language,
         )
         return _circuit_item(payload, task)
     except (RuntimeError, ValueError) as exc:
@@ -215,7 +222,7 @@ def _run_circuit_task(task: dict) -> dict:
         }
 
 
-def handle_build(prompt: str) -> dict:
+def handle_build(prompt: str, language: str = "zh") -> dict:
     if not all(os.environ.get(name) for name in REQUIRED_ENV):
         return {
             "kind": "error",
@@ -227,7 +234,7 @@ def handle_build(prompt: str) -> dict:
     reply = response.text
     qasm = extract_qasm(reply)
     if qasm:
-        return _circuit_response(prompt, response, qasm)
+        return _circuit_response(prompt, response, qasm, language=language)
     if response.verification is not None and not response.verification.ok:
         answer = response.plan.get("answer") if response.plan else None
         task_plan = _decompose(prompt)
@@ -237,7 +244,9 @@ def handle_build(prompt: str) -> dict:
             try:
                 lesson = explain_question(
                     knowledge_question,
-                    answer if isinstance(answer, str) and answer.strip() else "请直接准确回答这个知识问题。",
+                    answer if isinstance(answer, str) and answer.strip()
+                    else "请直接准确回答这个知识问题。",
+                    language,
                 )
             except (RuntimeError, ValueError) as exc:
                 print(f"[LoomQ partial explanation fallback] {exc}")
@@ -281,10 +290,11 @@ def handle_build(prompt: str) -> dict:
                 circuit_response,
                 circuit_qasm,
                 task_plan=task_plan,
+                language=language,
             )
     knowledge_question = _knowledge_question(task_plan) or prompt
     try:
-        lesson = explain_question(knowledge_question, reply)
+        lesson = explain_question(knowledge_question, reply, language)
     except (RuntimeError, ValueError) as exc:
         print(f"[LoomQ visual lesson fallback] {exc}")
         lesson = None
@@ -323,7 +333,10 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", "0"))
         try:
             payload = json.loads(self.rfile.read(length) or b"{}")
-            result = handle_build(str(payload.get("prompt", "")))
+            result = handle_build(
+                str(payload.get("prompt", "")),
+                "en" if str(payload.get("language", "zh")) == "en" else "zh",
+            )
         except Exception as exc:  # UI 永远不该看到 500。
             result = {"kind": "circuit", "ok": False, "message": f"处理失败：{exc}"}
         self._send(200, json.dumps(result, ensure_ascii=False).encode("utf-8"),

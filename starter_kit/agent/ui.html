@@ -102,7 +102,25 @@ body{
 .body{padding:16px; background:#fdfcff}
 
 /* 入门教程：帮助菜单里的零基础引导 */
-.menubar span[role=button]{cursor:pointer}
+.menubar span[role=button]{
+  cursor:pointer; padding:2px 9px; border:2px solid var(--y2k-ink); border-radius:4px;
+  background:var(--y2k-lemon); box-shadow:2px 2px 0 var(--y2k-ink);
+}
+.menubar span[role=button]:hover{background:var(--y2k-mint)}
+.menubar span[role=button]:active{box-shadow:none; transform:translate(2px,2px)}
+/* 侧边入门引导按钮：让「不知道从哪开始」的用户一眼看到 */
+.help-rail{
+  display:flex; align-items:center; gap:9px; margin:0 0 13px; padding:10px 13px;
+  border:2px solid var(--y2k-ink); border-radius:7px; background:var(--y2k-mint);
+  box-shadow:3px 3px 0 var(--y2k-ink);
+}
+.help-rail .icon{
+  display:grid; width:26px; height:26px; flex:0 0 26px; place-items:center;
+  border:2px solid var(--y2k-ink); border-radius:50%; background:#fff; font-weight:800;
+}
+.help-rail p{flex:1; margin:0; font-size:13px; line-height:1.5}
+.help-rail button{min-width:0; padding:6px 13px; background:var(--y2k-lemon); font-weight:700}
+@media (max-width:640px){ .help-rail{flex-wrap:wrap} .help-rail p{flex:1 1 100%} }
 .menubar span[role=button]:focus-visible{outline:2px solid var(--y2k-ink); outline-offset:1px}
 .lang-toggle{
   min-width:0; padding:3px 9px; margin-right:4px; border:2px solid var(--y2k-ink);
@@ -436,6 +454,11 @@ button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px
   <div class="menubar"><span data-i18n="mFile"><u>文</u>件</span><span data-i18n="mEdit"><u>编</u>辑</span><span data-i18n="mView"><u>查</u>看</span><span id="help-menu" role="button" tabindex="0" aria-haspopup="dialog" data-i18n="mHelp"><u>帮</u>助</span></div>
 
   <div class="body">
+    <div class="help-rail">
+      <span class="icon" aria-hidden="true">?</span>
+      <p data-i18n="railText">第一次接触量子计算？先看 3 分钟入门教程，再开始构建。</p>
+      <button id="open-tutorial" data-i18n="railBtn">入门教程</button>
+    </div>
     <fieldset>
       <legend>想做什么？</legend>
       <label for="prompt">用大白话说就行，不需要懂量子：</label>
@@ -448,10 +471,10 @@ button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px
       <div id="examples" class="hint" hidden>
         <strong>试试这些：</strong>
         <div class="row">
-          <button class="ex" data-p="让三个量子比特纠缠在一起" data-i18n="ex1">三比特纠缠</button>
-          <button class="ex" data-p="做一个贝尔态" data-i18n="ex2">贝尔态</button>
-          <button class="ex" data-p="我要跑 15 比特的电路，而且不想排队，选哪个平台？" data-i18n="ex3">选平台</button>
-          <button class="ex" data-p="什么是量子纠缠？" data-i18n="ex4">认识量子纠缠</button>
+          <button class="ex" data-p="让三个量子比特纠缠在一起" data-p-en="entangle three qubits together" data-i18n="ex1">三比特纠缠</button>
+          <button class="ex" data-p="做一个贝尔态" data-p-en="make a Bell state" data-i18n="ex2">贝尔态</button>
+          <button class="ex" data-p="我要跑 15 比特的电路，而且不想排队，选哪个平台？" data-p-en="I need to run a 15-qubit circuit with no queue time, which platform should I use?" data-i18n="ex3">选平台</button>
+          <button class="ex" data-p="什么是量子纠缠？" data-p-en="What is quantum entanglement?" data-i18n="ex4">认识量子纠缠</button>
         </div>
       </div>
     </fieldset>
@@ -588,10 +611,10 @@ function shortParam(value){
 
 function operationText(explanation, index){
   const step = explanation?.steps?.find(item => item.operation_id === `op_${index}`);
-  if(!step) return `第 ${index + 1} 步的白话解释暂时不可用。`;
+  if(!step) return I18N[LANG].stepFallback.replace("%s", index + 1);
   const terms = (step.terms || []).map(term => `${term.symbol}＝${term.meaning}`).join("；");
-  return `第 ${index + 1} 步：${step.plain}\n为什么需要：${step.purpose}`
-    + (terms ? `\n术语：${terms}` : "");
+  return `${I18N[LANG].stepWord} ${index + 1}: ${step.plain}\n${I18N[LANG].why}${step.purpose}`
+    + (terms ? `\n${I18N[LANG].termWord}${terms}` : "");
 }
 
 function targetMark(x, y){
@@ -622,13 +645,13 @@ function circuitSvg(circuit, explanation){
   const height = Math.max(190, top + (qubits - 1) * rowGap + 70);
   const y = q => top + q * rowGap;
   const parts = [
-    `<svg class="circuit-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="量子电路图">`,
+    `<svg class="circuit-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${I18N[LANG].svgAria}">`,
     `<defs><marker id="c-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#111"></path></marker></defs>`,
-    `<text class="measure-title" x="${measureX}" y="20">最后读取结果</text>`
+    `<text class="measure-title" x="${measureX}" y="20">${I18N[LANG].readOut}</text>`
   ];
 
   for(let q=0; q<qubits; q++){
-    parts.push(`<text class="qlabel" x="${left-12}" y="${y(q)+5}">第 ${q+1} 位  q[${q}]</text>`);
+    parts.push(`<text class="qlabel" x="${left-12}" y="${y(q)+5}">${I18N[LANG].qubitLabel} ${q+1}  q[${q}]</text>`);
     parts.push(`<line class="wire" x1="${left}" y1="${y(q)}" x2="${width-88}" y2="${y(q)}"></line>`);
   }
 
@@ -662,18 +685,18 @@ function circuitSvg(circuit, explanation){
 
   measurements.forEach(m => {
     const my = y(m.qubit);
-    parts.push(`<g aria-label="测量 q${m.qubit} 到 c${m.cbit}">`);
+    parts.push(`<g aria-label="${I18N[LANG].measureAria} q${m.qubit} \u2192 c${m.cbit}">`);
     parts.push(`<rect class="box" x="${measureX-22}" y="${my-19}" width="44" height="38"></rect>`);
     parts.push(`<path class="meter" d="M ${measureX-12} ${my+9} A 13 13 0 0 1 ${measureX+12} ${my+9}"></path>`);
     parts.push(`<line class="meter" x1="${measureX}" y1="${my+8}" x2="${measureX+10}" y2="${my-8}"></line>`);
     parts.push(`<line class="wire" x1="${measureX+22}" y1="${my}" x2="${width-88}" y2="${my}" marker-end="url(#c-arrow)"></line>`);
-    parts.push(`<text class="clabel" x="${width-80}" y="${my+5}">结果 c[${m.cbit}]</text></g>`);
+    parts.push(`<text class="clabel" x="${width-80}" y="${my+5}">${I18N[LANG].resultLabel} c[${m.cbit}]</text></g>`);
   });
 
   parts.push(`</svg>`);
   return `<div class="circuit-scroll">${parts.join("")}</div>`
-    + `<div class="circuit-legend"><strong>怎么看：</strong>每条横线是一位量子信息，操作从左往右依次执行；● 是“条件开关”，⊕ 是被控制的翻转，仪表表示最后读取结果。</div>`
-    + `<div class="circuit-detail" aria-live="polite">下面会用白话解释当前步骤，不需要先记住图里的符号。</div>`;
+    + `<div class="circuit-legend">${I18N[LANG].circuitLegend}</div>`
+    + `<div class="circuit-detail" aria-live="polite">${I18N[LANG].detailHint}</div>`;
 }
 
 function bindCircuit(panel){
@@ -700,7 +723,7 @@ function bindCircuit(panel){
 
 function basisHtml(basis){
   if(!basis) return "";
-  return `<div class="basis"><strong>依据：</strong>${esc(basis.source)} ${esc(basis.version)}；${esc(basis.status)}。</div>`;
+  return `<div class="basis"><strong>${I18N[LANG].basis}</strong>${esc(basis.source)} ${esc(basis.version)}；${esc(basis.status)}。</div>`;
 }
 
 function histogram(probs){
@@ -735,7 +758,7 @@ function conceptLessonHtml(lesson){
     + `<div class="visual-track visual-${visualType}">${nodes}</div>`
     + `<figcaption>${esc(lesson.visual.caption)}</figcaption></figure>`
     + `<div class="lesson-cards">${cards}</div>`
-    + `<div class="lesson-takeaway"><strong>只记这一句：</strong>${esc(lesson.takeaway)}</div>`
+    + `<div class="lesson-takeaway"><strong>${I18N[LANG].takeaway}</strong>${esc(lesson.takeaway)}</div>`
     + `</article>`;
 }
 
@@ -745,15 +768,15 @@ function circuitLessonHtml(lesson){
       `<span class="term-chip"><strong>${esc(term.symbol)}</strong>：${esc(term.meaning)}</span>`
     ).join("");
     return `<section class="circuit-lesson-step"><span class="step-number">${index + 1}</span><div>`
-      + `<p><strong>${esc(step.plain)}</strong></p><p class="muted">为什么需要：${esc(step.purpose)}</p>${terms}</div></section>`;
+      + `<p><strong>${esc(step.plain)}</strong></p><p class="muted">${I18N[LANG].why}${esc(step.purpose)}</p>${terms}</div></section>`;
   }).join("");
   const result = lesson.result
-    ? `<section class="lesson-card"><h3><span class="lesson-icon">✓</span>本地验证结果</h3><p>${esc(lesson.result)}</p></section>`
+    ? `<section class="lesson-card"><h3><span class="lesson-icon">✓</span>${I18N[LANG].localCheck}</h3><p>${esc(lesson.result)}</p></section>`
     : "";
   return `<article class="lesson"><header class="lesson-head"><span class="lesson-kicker">CIRCUIT WALKTHROUGH</span>`
-    + `<h2>这条电路在做什么？</h2><p class="lesson-summary">${esc(lesson.overview)}</p></header>`
+    + `<h2>${I18N[LANG].whatDoes}</h2><p class="lesson-summary">${esc(lesson.overview)}</p></header>`
     + `<div class="circuit-lesson-steps">${stepCards}</div><div class="lesson-cards">`
-    + `<section class="lesson-card"><h3><span class="lesson-icon">M</span>怎么读结果</h3><p>${esc(lesson.measurement)}</p></section>`
+    + `<section class="lesson-card"><h3><span class="lesson-icon">M</span>${I18N[LANG].howRead}</h3><p>${esc(lesson.measurement)}</p></section>`
     + `${result}</div></article>`;
 }
 
@@ -781,7 +804,7 @@ function circuitItems(){
   if(!state.circuitData) return [];
   return [{
     task_id:`task_${taskNumber("circuit_build")}`,
-    request:"生成电路",
+    request:I18N[LANG].genCircuit,
     ok:true,
     circuit:state.circuitData,
     probabilities:state.result,
@@ -792,14 +815,14 @@ function circuitItems(){
 }
 
 function taskBlockHtml(number, title, detail, body){
-  return `<section class="task-block"><header class="task-heading"><span>任务 ${number}</span>`
+  return `<section class="task-block"><header class="task-heading"><span>${I18N[LANG].task} ${number}</span>`
     + `<strong>${esc(title)}</strong><small>${esc(detail)}</small></header>${body}</section>`;
 }
 
 function expectedResultText(expected=state.expected){
   const entries = Object.entries(expected || {}).filter(([, value]) => value > 0);
-  if(!entries.length) return "已按用户目标生成并自检";
-  return "目标：" + entries.map(([key, value]) => `${key} ${(value * 100).toFixed(0)}%`).join(" · ");
+  if(!entries.length) return I18N[LANG].builtChecked;
+  return I18N[LANG].goal + entries.map(([key, value]) => `${key} ${(value * 100).toFixed(0)}%`).join(" · ");
 }
 
 function render(tab){
@@ -808,8 +831,8 @@ function render(tab){
     const items = circuitItems();
     if(items.length){
       p.innerHTML = items.map(item => item.ok
-        ? taskBlockHtml(taskIdNumber(item.task_id), "生成电路", item.request, circuitSvg(item.circuit, item.explanation))
-        : taskBlockHtml(taskIdNumber(item.task_id), "生成电路失败", item.request, `<p class="muted">${esc(item.message)}</p>`)
+        ? taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].genCircuit, item.request, circuitSvg(item.circuit, item.explanation))
+        : taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].genFailed, item.request, `<p class="muted">${esc(item.message)}</p>`)
       ).join("");
       bindCircuit(p);
     }
@@ -819,24 +842,24 @@ function render(tab){
   else if(tab === "result"){
     const items = circuitItems();
     p.innerHTML = items.length ? items.map(item => item.ok
-      ? taskBlockHtml(taskIdNumber(item.task_id), "运行结果", expectedResultText(item.expected_probabilities), histogram(item.probabilities))
-      : taskBlockHtml(taskIdNumber(item.task_id), "运行失败", item.request, `<p class="muted">${esc(item.message)}</p>`)
+      ? taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].runResult, expectedResultText(item.expected_probabilities), histogram(item.probabilities))
+      : taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].runFailed, item.request, `<p class="muted">${esc(item.message)}</p>`)
     ).join("") : `<span class="muted">${I18N[LANG].emptyResult}</span>`;
   }
   else if(tab === "qasm"){
     const items = circuitItems();
     p.innerHTML = items.length ? items.map(item => item.ok
       ? taskBlockHtml(taskIdNumber(item.task_id), "QASM", item.request, `<pre>${esc(item.qasm)}</pre>`)
-      : taskBlockHtml(taskIdNumber(item.task_id), "QASM 未生成", item.request, `<p class="muted">${esc(item.message)}</p>`)
+      : taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].noQasm, item.request, `<p class="muted">${esc(item.message)}</p>`)
     ).join("") : `<span class="muted">${I18N[LANG].emptyQasm}</span>`;
   }
   else if(state.concept && circuitItems().length && hasCompoundGoals()){
     const knowledge = (state.tasks || []).find(task => task.kind !== "circuit_build" && task.kind !== "backend_select");
     const knowledgeNumber = knowledge ? Number(knowledge.id.split("_")[1]) : 1;
-    p.innerHTML = taskBlockHtml(knowledgeNumber, "理解问题", knowledge?.request || "概念与含义", conceptLessonHtml(state.concept))
+    p.innerHTML = taskBlockHtml(knowledgeNumber, I18N[LANG].understandQ, knowledge?.request || I18N[LANG].conceptMeaning, conceptLessonHtml(state.concept))
       + circuitItems().map(item => item.ok && item.explanation
-        ? taskBlockHtml(taskIdNumber(item.task_id), "生成电路", item.request, circuitLessonHtml(item.explanation))
-        : taskBlockHtml(taskIdNumber(item.task_id), "生成电路失败", item.request, `<p class="muted">${esc(item.message || "解释暂时不可用")}</p>`)
+        ? taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].genCircuit, item.request, circuitLessonHtml(item.explanation))
+        : taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].genFailed, item.request, `<p class="muted">${esc(item.message || I18N[LANG].noExplain)}</p>`)
       ).join("");
   }
   else if(state.concept && !state.circuitData) p.innerHTML = conceptLessonHtml(state.concept);
@@ -859,7 +882,10 @@ $("demo").addEventListener("click", () => {
   box.hidden = !box.hidden;
 });
 document.querySelectorAll(".ex").forEach(b =>
-  b.addEventListener("click", () => { $("prompt").value = b.dataset.p; $("examples").hidden = true; build(); }));
+  b.addEventListener("click", () => {
+    $("prompt").value = (LANG === "en" && b.dataset.pEn) ? b.dataset.pEn : b.dataset.p;
+    $("examples").hidden = true; build();
+  }));
 
 $("prompt").addEventListener("keydown", e => {
   if((e.ctrlKey || e.metaKey) && e.key === "Enter") build();
@@ -872,7 +898,7 @@ const I18N = {
     ready: "LOCAL UI READY", eyebrow: "QUANTUM ACCESSIBILITY FOR EVERYONE",
     launchDemo: "\u25b6 LAUNCH DEMO", getStarted: "GET STARTED \u2192",
     microcopy: "No quantum background needed \u00b7 click GET STARTED to begin",
-    heroTitle: "Build a quantum circuit<br>with one sentence",
+    heroTitle: "One sentence,<br>build a quantum circuit",
     heroLede: "From plain language to cross-platform results \u2014 LoomQ parses, generates, runs and verifies for you.",
     winTitle: "LoomQ Quantum Assistant \u2014 build circuits in plain language",
     mFile: "<u>F</u>ile", mEdit: "<u>E</u>dit", mView: "<u>V</u>iew", mHelp: "<u>H</u>elp",
@@ -887,6 +913,33 @@ const I18N = {
     emptyCircuit: "No circuit yet.", emptyResult: "No results yet.",
     emptyQasm: "No QASM yet.",
     emptyExplain: "Build a circuit and this tab will explain it in plain language.",
+    basis: "Source:", takeaway: "Just remember this:", why: "Why it's needed:",
+    localCheck: "Local verification", whatDoes: "What does this circuit do?",
+    howRead: "How to read the results", genCircuit: "Generate circuit",
+    genFailed: "Circuit generation failed", runResult: "Run results",
+    runFailed: "Run failed", noQasm: "QASM not generated",
+    understandQ: "Understand the question", conceptMeaning: "Concept & meaning",
+    noExplain: "Explanation not available", task: "Task", goal: "Goal:",
+    builtChecked: "Built and self-checked against your goal",
+    stepFallback: "Plain-language explanation for step %s is not available.",
+    sayFirst: "Tell me what you want first \u2014 e.g. \"entangle three qubits together\".",
+    understanding: "Understanding what you mean\u2026",
+    heard: "Got it:", diagramDone: "Diagram ready", answered: "Answered your question",
+    diagramNa: "Diagram unavailable, kept the basic answer",
+    pickPlatform: "Got it: you're choosing a platform",
+    filtered: "Filtered using the official backend capability table",
+    wantCircuit: "You want to build a quantum circuit",
+    understoodSep: "explained separately", taskGenRun: "circuit generated and run",
+    somePassed: "Some tasks failed the target-semantics self-check",
+    allPassed: "All circuits passed the target-semantics self-check",
+    circuitsPassed: "circuits passed",
+    svgAria: "quantum circuit diagram", readOut: "read out", qubitLabel: "qubit",
+    resultLabel: "result", measureAria: "measure", stepWord: "Step",
+    termWord: "Terms:",
+    circuitLegend: "<strong>How to read:</strong> each line is one qubit, operations run left to right; \u25cf is the control, \u2295 is the controlled flip, and the meter is the final read-out.",
+    detailHint: "Each step is explained in plain language below \u2014 no need to memorise the symbols first.", noServer: "Can't reach the local server \u2014 check it's still running in your terminal.",
+    railText: "New to quantum computing? Take the 3-minute tutorial first.",
+    railBtn: "Tutorial",
     tutTitle: "Getting Started \u00b7 Quantum computing from zero",
     prev: "Back", next: "Next", finish: "Start using it",
     langBtn: "\u4e2d\u6587",
@@ -910,6 +963,33 @@ const I18N = {
     emptyCircuit: "\u8fd8\u6ca1\u6709\u7535\u8def\u3002", emptyResult: "\u8fd8\u6ca1\u6709\u8fd0\u884c\u7ed3\u679c\u3002",
     emptyQasm: "\u8fd8\u6ca1\u6709 QASM\u3002",
     emptyExplain: "\u6784\u5efa\u4e00\u4e2a\u7535\u8def\u540e\uff0c\u8fd9\u91cc\u4f1a\u7528\u5927\u767d\u8bdd\u89e3\u91ca\u5b83\u5728\u505a\u4ec0\u4e48\u3002",
+    basis: "\u4f9d\u636e\uff1a", takeaway: "\u53ea\u8bb0\u8fd9\u4e00\u53e5\uff1a", why: "\u4e3a\u4ec0\u4e48\u9700\u8981\uff1a",
+    localCheck: "\u672c\u5730\u9a8c\u8bc1\u7ed3\u679c", whatDoes: "\u8fd9\u6761\u7535\u8def\u5728\u505a\u4ec0\u4e48\uff1f",
+    howRead: "\u600e\u4e48\u8bfb\u7ed3\u679c", genCircuit: "\u751f\u6210\u7535\u8def",
+    genFailed: "\u751f\u6210\u7535\u8def\u5931\u8d25", runResult: "\u8fd0\u884c\u7ed3\u679c",
+    runFailed: "\u8fd0\u884c\u5931\u8d25", noQasm: "QASM \u672a\u751f\u6210",
+    understandQ: "\u7406\u89e3\u95ee\u9898", conceptMeaning: "\u6982\u5ff5\u4e0e\u542b\u4e49",
+    noExplain: "\u89e3\u91ca\u6682\u65f6\u4e0d\u53ef\u7528", task: "\u4efb\u52a1", goal: "\u76ee\u6807\uff1a",
+    builtChecked: "\u5df2\u6309\u7528\u6237\u76ee\u6807\u751f\u6210\u5e76\u81ea\u68c0",
+    stepFallback: "\u7b2c %s \u6b65\u7684\u767d\u8bdd\u89e3\u91ca\u6682\u65f6\u4e0d\u53ef\u7528\u3002",
+    sayFirst: "\u5148\u8bf4\u4e00\u53e5\u4f60\u60f3\u505a\u4ec0\u4e48 \u2014\u2014 \u6bd4\u5982\u300c\u8ba9\u4e09\u4e2a\u91cf\u5b50\u6bd4\u7279\u7ea0\u7f20\u5728\u4e00\u8d77\u300d\u3002",
+    understanding: "\u6b63\u5728\u7406\u89e3\u4f60\u7684\u610f\u601d\u2026",
+    heard: "\u542c\u61c2\u4e86\uff1a", diagramDone: "\u5df2\u751f\u6210\u56fe\u89e3", answered: "\u5df2\u56de\u7b54\u4f60\u7684\u95ee\u9898",
+    diagramNa: "\u56fe\u89e3\u6682\u65f6\u4e0d\u53ef\u7528\uff0c\u5df2\u4fdd\u7559\u57fa\u7840\u56de\u7b54",
+    pickPlatform: "\u542c\u61c2\u4e86\uff1a\u4f60\u5728\u6311\u8fd0\u884c\u5e73\u53f0",
+    filtered: "\u5df2\u6309\u5b98\u65b9\u540e\u7aef\u80fd\u529b\u8868\u7b5b\u9009",
+    wantCircuit: "\u4f60\u60f3\u6784\u5efa\u4e00\u4e2a\u91cf\u5b50\u7535\u8def",
+    understoodSep: "\u7406\u89e3\u95ee\u9898\u5df2\u5355\u72ec\u89e3\u91ca", taskGenRun: "\u7535\u8def\u5df2\u751f\u6210\u5e76\u8fd0\u884c",
+    somePassed: "\u90e8\u5206\u4efb\u52a1\u672a\u901a\u8fc7\u76ee\u6807\u8bed\u4e49\u81ea\u68c0",
+    allPassed: "\u5168\u90e8\u7535\u8def\u5747\u901a\u8fc7\u76ee\u6807\u8bed\u4e49\u81ea\u68c0",
+    circuitsPassed: "\u7535\u8def\u901a\u8fc7",
+    svgAria: "\u91cf\u5b50\u7535\u8def\u56fe", readOut: "\u6700\u540e\u8bfb\u53d6\u7ed3\u679c", qubitLabel: "\u4f4d", 
+    resultLabel: "\u7ed3\u679c", measureAria: "\u6d4b\u91cf", stepWord: "\u7b2c",
+    termWord: "\u672f\u8bed\uff1a",
+    circuitLegend: "<strong>\u600e\u4e48\u770b\uff1a</strong>\u6bcf\u6761\u6a2a\u7ebf\u662f\u4e00\u4f4d\u91cf\u5b50\u4fe1\u606f\uff0c\u64cd\u4f5c\u4ece\u5de6\u5f80\u53f3\u4f9d\u6b21\u6267\u884c\uff1b\u25cf \u662f\u201c\u6761\u4ef6\u5f00\u5173\u201d\uff0c\u2295 \u662f\u88ab\u63a7\u5236\u7684\u7ffb\u8f6c\uff0c\u4eea\u8868\u8868\u793a\u6700\u540e\u8bfb\u53d6\u7ed3\u679c\u3002",
+    detailHint: "\u4e0b\u9762\u4f1a\u7528\u767d\u8bdd\u89e3\u91ca\u5f53\u524d\u6b65\u9aa4\uff0c\u4e0d\u9700\u8981\u5148\u8bb0\u4f4f\u56fe\u91cc\u7684\u7b26\u53f7\u3002", noServer: "\u8fde\u4e0d\u4e0a\u672c\u5730\u670d\u52a1\uff0c\u8bf7\u786e\u8ba4\u7ec8\u7aef\u91cc\u7684\u670d\u52a1\u8fd8\u5728\u8fd0\u884c\u3002",
+    railText: "\u7b2c\u4e00\u6b21\u63a5\u89e6\u91cf\u5b50\u8ba1\u7b97\uff1f\u5148\u770b 3 \u5206\u949f\u5165\u95e8\u6559\u7a0b\uff0c\u518d\u5f00\u59cb\u6784\u5efa\u3002",
+    railBtn: "\u5165\u95e8\u6559\u7a0b",
     tutTitle: "\u5165\u95e8\u6559\u7a0b \u00b7 \u4ece\u96f6\u770b\u61c2\u91cf\u5b50\u8ba1\u7b97",
     prev: "\u4e0a\u4e00\u6b65", next: "\u4e0b\u4e00\u6b65", finish: "\u5f00\u59cb\u4f7f\u7528",
     langBtn: "EN",
@@ -1000,6 +1080,7 @@ function applyLanguage(){
     if(src) s.innerHTML = src;
   });
   [...document.querySelectorAll(".lang-toggle")].forEach(b => b.textContent = t.langBtn);
+  if(typeof window.__tutorialRefresh === "function") window.__tutorialRefresh();
   // 重绘当前面板，让空状态文案跟随语言切换。
   const active = document.querySelector('.tab[aria-selected="true"]');
   if(active && typeof render === "function") render(active.dataset.t);
@@ -1028,7 +1109,7 @@ function toggleLanguage(){
     steps.forEach((s, i) => s.classList.toggle("on", i === at));
     marks.forEach((m, i) => m.classList.toggle("on", i === at));
     prev.disabled = at === 0;
-    next.textContent = at === steps.length - 1 ? "开始使用" : "下一步";
+    next.textContent = at === steps.length - 1 ? I18N[LANG].finish : I18N[LANG].next;
     modal.querySelector(".tutorial-body").scrollTop = 0;
   }
 
@@ -1044,7 +1125,10 @@ function toggleLanguage(){
     if(lastFocus && lastFocus.focus) lastFocus.focus();
   }
 
+  window.__tutorialRefresh = () => show(at);
   $("help-menu").addEventListener("click", open);
+  const rail = $("open-tutorial");
+  if(rail) rail.addEventListener("click", open);
   $("help-menu").addEventListener("keydown", e => {
     if(e.key === "Enter" || e.key === " "){ e.preventDefault(); open(); }
   });
@@ -1090,16 +1174,16 @@ window.addEventListener("popstate", () =>
 async function build(){
   const prompt = $("prompt").value.trim();
   if(!prompt){
-    steps([{k:"err", t:"先说一句你想做什么 —— 比如「让三个量子比特纠缠在一起」。"}]);
+    steps([{k:"err", t:I18N[LANG].sayFirst}]);
     $("prompt").focus();
     return;
   }
   busy(true);
-  steps([{k:"run", t:"正在理解你的意思…"}]);
+  steps([{k:"run", t:I18N[LANG].understanding}]);
   try{
     const res = await fetch("/api/build", {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({prompt})
+      body: JSON.stringify({prompt, language: LANG})
     });
     const data = await res.json();
     if(data.kind === "partial"){
@@ -1107,7 +1191,7 @@ async function build(){
       const knowledgeTask = (state.tasks || []).find(task => task.kind !== "circuit_build" && task.kind !== "backend_select");
       const knowledgeNumber = knowledgeTask ? Number(knowledgeTask.id.split("_")[1]) : 1;
       steps([
-        {k:"ok", t:`任务 ${knowledgeNumber}：理解问题已完成`},
+        {k:"ok", t:`${I18N[LANG].task} ${knowledgeNumber}: ${I18N[LANG].understandQ}`},
         {k:"err", t:`任务 ${taskNumber("circuit_build")}：候选电路未通过目标校验`}
       ]);
       $("fid").textContent = I18N[LANG].fidNone;
@@ -1118,41 +1202,41 @@ async function build(){
       state = {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:data.explain, explanation:null, concept:data.concept || null, tasks:data.tasks || null, circuits:null, backend:null, basis:null};
       const intentLabel = data.intent?.label;
       steps(intentLabel && data.concept
-        ? [{k:"ok", t:`听懂了：${intentLabel}`}, {k:"ok", t:"已生成图解"}]
-        : [{k:"ok", t:"已回答你的问题"}, {k:"err", t:"图解暂时不可用，已保留基础回答"}]);
+        ? [{k:"ok", t:`${I18N[LANG].heard}${intentLabel}`}, {k:"ok", t:I18N[LANG].diagramDone}]
+        : [{k:"ok", t:I18N[LANG].answered}, {k:"err", t:I18N[LANG].diagramNa}]);
       $("fid").textContent = I18N[LANG].fidNone;
       document.querySelectorAll(".tab").forEach(x =>
         x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
       render("explain");
     } else if(data.kind === "backend"){
       state = {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:data.explain, explanation:null, concept:null, tasks:data.tasks || null, circuits:null, backend:data.backend, basis:data.basis || null};
-      steps([{k:"ok", t:"听懂了：你在挑运行平台"}, {k:"ok", t:"已按官方后端能力表筛选"}]);
+      steps([{k:"ok", t:I18N[LANG].pickPlatform}, {k:"ok", t:I18N[LANG].filtered}]);
       $("fid").textContent = I18N[LANG].fidNone;
       document.querySelectorAll(".tab").forEach(x =>
         x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
       render("explain");
     } else if(data.ok){
       state = {diagram:data.diagram, circuitData:data.circuit || null, result:data.probabilities, expected:data.expected_probabilities || null, qasm:data.qasm, explain:data.explain, explanation:data.explanation || null, concept:data.concept || null, tasks:data.tasks || null, circuits:data.circuits || null, backend:null, basis:null};
-      const intentLabel = data.intent?.label || "你想构建一个量子电路";
+      const intentLabel = data.intent?.label || I18N[LANG].wantCircuit;
       const compound = (data.tasks || []).length > 1;
-      const list = [{k:"ok", t:`听懂了：${intentLabel}`}];
+      const list = [{k:"ok", t:`${I18N[LANG].heard}${intentLabel}`}];
       if(compound){
         const knowledgeTask = (state.tasks || []).find(task => task.kind !== "circuit_build" && task.kind !== "backend_select");
         if(knowledgeTask){
           const knowledgeNumber = Number(knowledgeTask.id.split("_")[1]);
-          list.push({k:"ok", t:`任务 ${knowledgeNumber}：理解问题已单独解释`});
+          list.push({k:"ok", t:`${I18N[LANG].task} ${knowledgeNumber}: ${I18N[LANG].understoodSep}`});
         }
       }
       circuitItems().forEach(item => list.push(item.ok
-        ? {k:"ok", t:`任务 ${taskIdNumber(item.task_id)}：电路已生成并运行`}
-        : {k:"err", t:`任务 ${taskIdNumber(item.task_id)}：${item.message}`}
+        ? {k:"ok", t:`${I18N[LANG].task} ${taskIdNumber(item.task_id)}: ${I18N[LANG].taskGenRun}`}
+        : {k:"err", t:`${I18N[LANG].task} ${taskIdNumber(item.task_id)}: ${item.message}`}
       ));
       list.push(data.all_tasks_ok === false
-        ? {k:"err", t:"部分任务未通过目标语义自检"}
-        : {k:"ok", t:"全部电路均通过目标语义自检"});
+        ? {k:"err", t:I18N[LANG].somePassed}
+        : {k:"ok", t:I18N[LANG].allPassed});
       steps(list);
       const passedCircuits = circuitItems().filter(item => item.ok).length;
-      $("fid").textContent = circuitItems().length > 1 ? `${passedCircuits}/${circuitItems().length} 电路通过`
+      $("fid").textContent = circuitItems().length > 1 ? `${passedCircuits}/${circuitItems().length} ${I18N[LANG].circuitsPassed}`
         : data.fidelity !== null ? `${I18N[LANG].fid} ${data.fidelity.toFixed(2)}` : I18N[LANG].fidNone;
       document.querySelectorAll(".tab").forEach(x =>
         x.setAttribute("aria-selected", String(x.dataset.t === "circuit")));
@@ -1163,7 +1247,7 @@ async function build(){
       if(data.qasm){ state.qasm = data.qasm; }
     }
   }catch(err){
-    steps([{k:"err", t:"连不上本地服务，请确认终端里的服务还在运行。"}]);
+    steps([{k:"err", t:I18N[LANG].noServer}]);
   }finally{
     busy(false);
   }
