@@ -258,12 +258,6 @@ class L2AgentTests(unittest.TestCase):
         self.assertIn("解析器报错", retry_messages[-1]["content"])
 
     def test_backend_constraints_are_resolved_from_the_official_table(self):
-        wrong_wildcard_plan = plan(
-            target_state="custom",
-            num_qubits=4,
-            expected_probabilities=second_expected,
-            qasm=WRONG_WILDCARD_QASM,
-        )
         ModelHandler.responses = [
             plan(
                 task="select_backend",
@@ -561,6 +555,12 @@ class L2AgentTests(unittest.TestCase):
             "1100": 0.25,
             "1101": 0.25,
         }
+        wrong_wildcard_plan = plan(
+            target_state="custom",
+            num_qubits=4,
+            expected_probabilities=second_expected,
+            qasm=WRONG_WILDCARD_QASM,
+        )
         ModelHandler.responses = [
             plan(
                 target_state="custom",
