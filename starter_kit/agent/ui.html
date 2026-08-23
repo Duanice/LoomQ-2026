@@ -87,27 +87,33 @@ body{
 .titlebar .t{flex:1; letter-spacing:.01em}
 .tbtn{
   display:inline-flex; width:20px; height:20px; align-items:center; justify-content:center;
-  border-radius:3px; background:#fff; color:var(--y2k-ink); font:700 11px/1 Tahoma,sans-serif;
+  min-width:20px; padding:0; border-radius:3px; background:#fff; color:var(--y2k-ink);
+  font:700 11px/1 Tahoma,sans-serif;
 }
 .tbtn:nth-last-child(3){background:var(--y2k-lemon)}
 .tbtn:nth-last-child(2){background:var(--y2k-mint)}
 .tbtn:last-child{background:var(--y2k-pink)}
+.window:fullscreen,.window.window-maximized{
+  width:100vw; height:100vh; max-width:none; margin:0; border-radius:0;
+  overflow:auto; background:#fff; box-shadow:none;
+}
+.window.window-maximized{position:fixed; inset:0; z-index:50}
 .menubar{
   display:flex; gap:16px; padding:7px 10px; background:var(--y2k-panel);
   border-bottom:2px solid var(--y2k-ink); font-size:13px; font-weight:600;
 }
-.menubar span{padding:2px 4px; border-radius:3px}
-.menubar span:hover{background:var(--y2k-lilac)}
+.menubar span{padding:2px 9px; border-radius:3px}
 .menubar span u{text-decoration:underline; text-underline-offset:2px}
 .body{padding:16px; background:#fdfcff}
 
 /* 入门教程：帮助菜单里的零基础引导 */
-.menubar span[role=button]{
-  cursor:pointer; padding:2px 9px; border:2px solid var(--y2k-ink); border-radius:4px;
+.menubar .menu-current{
+  border:2px solid var(--y2k-ink); border-radius:4px;
   background:var(--y2k-lemon); box-shadow:2px 2px 0 var(--y2k-ink);
 }
-.menubar span[role=button]:hover{background:var(--y2k-mint)}
-.menubar span[role=button]:active{box-shadow:none; transform:translate(2px,2px)}
+.menubar span[role=button]{cursor:pointer}
+.menubar span[role=button]:hover{background:var(--y2k-lilac)}
+.menubar span[role=button]:active{transform:translateY(1px)}
 /* 侧边入门引导按钮：让「不知道从哪开始」的用户一眼看到 */
 .help-rail{
   display:flex; align-items:center; gap:9px; margin:0 0 13px; padding:10px 13px;
@@ -130,12 +136,14 @@ body{
 .lang-toggle:hover{background:var(--y2k-mint)}
 .landing-header .lang-toggle{margin-right:8px}
 .tutorial-backdrop{
-  position:fixed; inset:0; z-index:50; display:flex; align-items:flex-start;
-  justify-content:center; padding:26px 16px; overflow:auto;
+  position:fixed; inset:0; z-index:50; display:flex; align-items:center;
+  justify-content:center; padding:clamp(18px,4vh,44px) 16px; overflow:auto;
   background:rgba(27,27,58,.42);
 }
 .tutorial{
   width:min(760px,100%); border:2px solid var(--y2k-ink); border-radius:8px;
+  max-height:calc(100vh - 64px); display:flex; flex-direction:column;
+  overflow:hidden; transform:translateY(-3vh);
   background:#fff; box-shadow:7px 7px 0 var(--y2k-ink);
 }
 .tutorial-bar{
@@ -148,7 +156,7 @@ body{
   min-width:0; width:26px; height:24px; padding:0; border:2px solid var(--y2k-ink);
   border-radius:4px; background:var(--y2k-pink); font-weight:700; cursor:pointer;
 }
-.tutorial-body{padding:18px 20px 22px}
+.tutorial-body{padding:18px 20px 22px; overflow:auto}
 .tutorial-step{display:none}
 .tutorial-step.on{display:block}
 .tutorial-step h2{margin:0 0 4px; font-size:20px; letter-spacing:-.02em}
@@ -191,6 +199,7 @@ body{
   .tutorial-body{padding:15px}
   .coin{flex-direction:column; gap:10px}
 }
+@media (max-height:640px){.tutorial{transform:none}}
 
 fieldset{
   margin:0 0 14px; padding:13px; border:2px solid var(--y2k-ink);
@@ -447,11 +456,11 @@ button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px
   <div class="titlebar">
     <span class="t" data-i18n="winTitle">LoomQ 量子助手 — 用大白话造量子电路</span>
     <button id="lang-toggle" class="lang-toggle" title="Switch language">EN</button>
-    <span class="tbtn out" aria-hidden="true">_</span>
-    <span class="tbtn out" aria-hidden="true">□</span>
-    <span class="tbtn out" aria-hidden="true">✕</span>
+    <button id="window-minimize" class="tbtn out" type="button" aria-label="返回首页">−</button>
+    <button id="window-maximize" class="tbtn out" type="button" aria-label="全屏展示" aria-pressed="false">□</button>
+    <button id="window-close" class="tbtn out" type="button" aria-label="返回首页">✕</button>
   </div>
-  <div class="menubar"><span data-i18n="mFile"><u>文</u>件</span><span data-i18n="mEdit"><u>编</u>辑</span><span data-i18n="mView"><u>查</u>看</span><span id="help-menu" role="button" tabindex="0" aria-haspopup="dialog" data-i18n="mHelp"><u>帮</u>助</span></div>
+  <div class="menubar"><span data-i18n="mFile"><u>文</u>件</span><span class="menu-current" aria-current="page" data-i18n="mEdit"><u>编</u>辑</span><span data-i18n="mView"><u>查</u>看</span><span id="help-menu" role="button" tabindex="0" aria-haspopup="dialog" data-i18n="mHelp"><u>帮</u>助</span></div>
 
   <div class="body">
     <div class="help-rail">
@@ -942,6 +951,7 @@ const I18N = {
     railBtn: "Tutorial",
     tutTitle: "Getting Started \u00b7 Quantum computing from zero",
     prev: "Back", next: "Next", finish: "Start using it",
+    windowHome: "Return to home", windowFullscreen: "Full screen", windowRestore: "Restore window",
     langBtn: "\u4e2d\u6587",
   },
   zh: {
@@ -992,6 +1002,7 @@ const I18N = {
     railBtn: "\u5165\u95e8\u6559\u7a0b",
     tutTitle: "\u5165\u95e8\u6559\u7a0b \u00b7 \u4ece\u96f6\u770b\u61c2\u91cf\u5b50\u8ba1\u7b97",
     prev: "\u4e0a\u4e00\u6b65", next: "\u4e0b\u4e00\u6b65", finish: "\u5f00\u59cb\u4f7f\u7528",
+    windowHome: "\u8fd4\u56de\u9996\u9875", windowFullscreen: "\u5168\u5c4f\u5c55\u793a", windowRestore: "\u6062\u590d\u7a97\u53e3",
     langBtn: "EN",
   },
 };
@@ -1090,6 +1101,7 @@ function toggleLanguage(){
   LANG = LANG === "zh" ? "en" : "zh";
   localStorage.setItem("loomq-lang", LANG);
   applyLanguage();
+  updateWindowControls();
 }
 
 /* 入门教程：五步引导，键盘可达，Esc 关闭 */
@@ -1150,7 +1162,39 @@ function toggleLanguage(){
 
 [...document.querySelectorAll(".lang-toggle")].forEach(b =>
   b.addEventListener("click", toggleLanguage));
+
+const appWindow = document.querySelector("#app-view .window");
+const maximizeButton = $("window-maximize");
+function windowIsFullscreen(){
+  return document.fullscreenElement === appWindow || appWindow.classList.contains("window-maximized");
+}
+function updateWindowControls(){
+  const t = I18N[LANG];
+  const fullscreen = windowIsFullscreen();
+  for(const id of ["window-minimize", "window-close"]){
+    $(id).title = $(id).ariaLabel = t.windowHome;
+  }
+  maximizeButton.title = maximizeButton.ariaLabel = fullscreen ? t.windowRestore : t.windowFullscreen;
+  maximizeButton.setAttribute("aria-pressed", String(fullscreen));
+  maximizeButton.textContent = fullscreen ? "❐" : "□";
+}
+function returnHome(){ location.assign("/"); }
+async function toggleWindowFullscreen(){
+  try{
+    if(document.fullscreenElement === appWindow) await document.exitFullscreen();
+    else if(appWindow.requestFullscreen) await appWindow.requestFullscreen();
+    else appWindow.classList.toggle("window-maximized");
+  }catch(_error){
+    appWindow.classList.toggle("window-maximized");
+  }
+  updateWindowControls();
+}
+$("window-minimize").addEventListener("click", returnHome);
+$("window-close").addEventListener("click", returnHome);
+maximizeButton.addEventListener("click", toggleWindowFullscreen);
+document.addEventListener("fullscreenchange", updateWindowControls);
 applyLanguage();
+updateWindowControls();
 
 function expandBuilder(runDemo=false, focusPrompt=false, updateRoute=true){
   $("landing").classList.add("builder-mode");

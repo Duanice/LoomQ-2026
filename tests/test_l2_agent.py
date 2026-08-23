@@ -872,6 +872,32 @@ class L2AgentTests(unittest.TestCase):
         self.assertNotIn("工作原理", ui_source)
         self.assertNotIn("关于比赛", ui_source)
 
+    def test_builder_window_controls_return_home_and_toggle_fullscreen(self):
+        ui_source = UI_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('id="window-minimize"', ui_source)
+        self.assertIn('id="window-maximize"', ui_source)
+        self.assertIn('id="window-close"', ui_source)
+        self.assertIn('function returnHome(){ location.assign("/"); }', ui_source)
+        self.assertIn('await appWindow.requestFullscreen()', ui_source)
+        self.assertIn('await document.exitFullscreen()', ui_source)
+        self.assertIn('document.addEventListener("fullscreenchange", updateWindowControls)', ui_source)
+
+    def test_tutorial_dialog_is_viewport_centered_with_safe_scroll(self):
+        ui_source = UI_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("display:flex; align-items:center", ui_source)
+        self.assertIn("max-height:calc(100vh - 64px)", ui_source)
+        self.assertIn("transform:translateY(-3vh)", ui_source)
+        self.assertIn(".tutorial-body{padding:18px 20px 22px; overflow:auto}", ui_source)
+
+    def test_edit_menu_is_current_and_help_opens_the_tutorial(self):
+        ui_source = UI_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('class="menu-current" aria-current="page" data-i18n="mEdit"', ui_source)
+        self.assertIn('id="help-menu" role="button"', ui_source)
+        self.assertIn('$("help-menu").addEventListener("click", open)', ui_source)
+
     def test_landing_builder_and_demo_urls_serve_the_ui(self):
         ui_server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         thread = threading.Thread(target=ui_server.serve_forever, daemon=True)
