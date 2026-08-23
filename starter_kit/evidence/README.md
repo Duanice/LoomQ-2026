@@ -10,9 +10,9 @@
 
 - [x] L1 真机
 - [x] L2 交互体验
-- [ ] 工程与产品化
+- [x] 工程与产品化
 - [ ] 自定义量子 RISC-V Bonus
-- [ ] 新手引导与视觉叙事 Bonus
+- [x] 新手引导与视觉叙事 Bonus
 
 ## L1 真机
 
@@ -73,10 +73,10 @@ evidence/files/spinq-screenshot.png
 已有内容可以直接引用主 README 或其他项目文档，不必复制到本目录。
 
 ```text
-干净环境中的构建和启动命令：[填写命令或文档路径]
-架构说明：[填写文档路径，或用几句话说明主要模块]
-目标用户和使用场景：[填写]
-完整使用流程：[填写文档、截图或演示路径]
+干净环境中的构建和启动命令：starter_kit/README.md 的“环境”“公开自测”和“L2 统一模型与环境变量”章节；容器复现命令为 cd starter_kit && docker build --platform linux/amd64 -t loomq-submission . && docker run --rm --platform linux/amd64 loomq-submission
+架构说明：starter_kit/README.md 的“统一 L1 架构”“L3 Hybrid-QASM 编译器”和“L2 统一模型与环境变量”章节；L2 的模型、确定性校验和多任务执行边界详见 starter_kit/L2_DESIGN.md
+目标用户和使用场景：没有量子计算背景、希望用自然语言学习概念、生成或修复量子电路、查看模拟结果并确定性选择后端的初学者与开发者
+完整使用流程：配置 LOOMQ_LLM_* 后执行 python3 -m starter_kit.agent.server --open；在欢迎页直接体验或进入专注模式，输入自然语言任务后依次查看电路图、运行结果、QASM 与白话解释；“文件”菜单可在本机恢复最近对话或导出 QASM，“帮助”菜单可随时打开入门教程
 ```
 
 工作人员会按最终 commit 实际构建和启动，并检查文档与代码是否一致、产品是否真的降低了量子计算的使用门槛。
@@ -96,10 +96,10 @@ evidence/files/spinq-screenshot.png
 请填写已有材料的路径，不要求为评分另写一套文档：
 
 ```text
-零基础首次运行指南：[填写]
-量子概念解释：[填写]
-结果可视化：[填写]
-错误恢复或无障碍引导：[填写]
+零基础首次运行指南：starter_kit/agent/ui.html 中“帮助 → 入门教程”的五步交互引导，以及 starter_kit/QUANTUM_101.md
+量子概念解释：starter_kit/agent/skills/explain-user-question/SKILL.md、starter_kit/agent/skills/explain-quantum-circuit/SKILL.md 与 starter_kit/agent/explainer.py
+结果可视化：starter_kit/agent/ui.html 中可切换的电路图、测量概率柱状图、QASM 和图文解释面板
+错误恢复或无障碍引导：starter_kit/agent/core.py 与 starter_kit/agent/verifier.py 会对解析、语法和目标测量语义做确定性自检并反馈重试；starter_kit/agent/ui.html 提供中英双语、键盘可达控件、错误提示和随时可重开的教程
 ```
 
 以上四项各 1 分。普通项目 README 完整不代表自动获得 Bonus。

@@ -898,6 +898,31 @@ class L2AgentTests(unittest.TestCase):
         self.assertIn('id="help-menu" role="button"', ui_source)
         self.assertIn('$("help-menu").addEventListener("click", open)', ui_source)
 
+    def test_file_menu_persists_and_restores_recent_local_conversations(self):
+        ui_source = UI_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('id="file-menu" role="button"', ui_source)
+        self.assertIn('id="recent-list"', ui_source)
+        self.assertIn('const HISTORY_KEY = "loomq-recent-v1"', ui_source)
+        self.assertIn("const HISTORY_LIMIT = 8", ui_source)
+        self.assertIn("function saveConversation(prompt)", ui_source)
+        self.assertIn("function restoreConversation(id)", ui_source)
+        self.assertIn('if(data.ok || data.kind === "partial") saveConversation(prompt)', ui_source)
+        self.assertIn("localStorage.setItem(HISTORY_KEY", ui_source)
+        self.assertIn("localStorage.removeItem(HISTORY_KEY)", ui_source)
+        self.assertIn("new Blob([state.qasm]", ui_source)
+
+    def test_view_menu_reuses_tabs_fullscreen_and_beginner_tip(self):
+        ui_source = UI_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('id="view-menu" role="button"', ui_source)
+        for tab in ("circuit", "result", "qasm", "explain"):
+            self.assertIn(f'data-view="{tab}"', ui_source)
+        self.assertIn("selectTab(button.dataset.view)", ui_source)
+        self.assertIn("await toggleWindowFullscreen()", ui_source)
+        self.assertIn('const TIPS_KEY = "loomq-hide-tips"', ui_source)
+        self.assertIn('id="help-rail" class="help-rail"', ui_source)
+
     def test_landing_builder_and_demo_urls_serve_the_ui(self):
         ui_server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         thread = threading.Thread(target=ui_server.serve_forever, daemon=True)
