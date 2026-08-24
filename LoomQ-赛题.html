@@ -416,7 +416,7 @@ footer p{margin-top:10px;font-size:16px;color:var(--ink-soft);letter-spacing:.08
   <p><strong>L2 到底要交付什么（按目标分数区分）</strong>：</p>
   <ul>
     <li><strong>只做客观部分（最高 20 分）</strong>：不要求另做网页、App、桌面软件或图形界面。选手必须在 <code>starter_kit/adapter.py</code> 中提交可运行的 <code>agent_chat(prompt: str) -&gt; str</code>；评测器会直接调用该函数。函数须读取组委会注入的 <code>LOOMQ_LLM_*</code> 配置，至少完成一次有效模型调用，并在返回文本中正确完成下述三类任务。通过 API 调用配合 Prompt／Agent 逻辑实现即可，技术栈不限。</li>
-    <li><strong>冲完整 30 分</strong>：在上述可自动评测代码之外，再提供一个可由零基础用户现场操作的 Agent 入口。网页、桌面／移动端或 CLI 均可，不强制图形界面；工作人员以最终提交代码实际运行评分。</li>
+    <li><strong>冲完整 30 分</strong>：在上述可自动评测代码之外，再提供一个可由零基础用户直接操作的 Agent 入口。网页、桌面／移动端或 CLI 均可，不强制图形界面；工作人员以最终提交代码实际运行评分。</li>
     <li><strong>不构成有效交付</strong>：只提交 Prompt 文档、对话截图、录屏或由选手人工操作第三方聊天产品，均不能替代可运行的 <code>agent_chat</code> 代码或交互入口。</li>
   </ul>
   <p>「生成 QASM → 用自己的 L1 跑一遍自验 → 不对就重试」是提高正确率的推荐工程方案，不是客观 20 分对软件形态的硬性要求；客观分只按模型调用合规性与最终答案正确性判定。此处仅说明 L2 自身的交付边界，不改变 L1 入门档作为评奖资格线的要求。</p>
