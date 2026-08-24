@@ -969,7 +969,7 @@ document.querySelectorAll(".ex").forEach(b =>
 $("prompt").addEventListener("keydown", e => {
   if((e.ctrlKey || e.metaKey) && e.key === "Enter") build();
 });
-$("go").addEventListener("click", build);
+$("go").addEventListener("click", () => build());
 
 /* 中英切换：只翻译界面文案与教程，Agent 回答仍跟随你输入的语言。 */
 const I18N = {
@@ -1012,6 +1012,7 @@ const I18N = {
     somePassed: "Some tasks failed the target-semantics self-check",
     allPassed: "All circuits passed the target-semantics self-check",
     syntaxOnly: "Circuits passed syntax checks; target semantics were not verified",
+    offlineDemo: "Loaded the verified offline Bell demo (no language model was called)",
     circuitsPassed: "circuits passed",
     svgAria: "quantum circuit diagram", readOut: "read out", qubitLabel: "qubit",
     resultLabel: "result", measureAria: "measure", stepWord: "Step",
@@ -1069,6 +1070,7 @@ const I18N = {
     somePassed: "\u90e8\u5206\u4efb\u52a1\u672a\u901a\u8fc7\u76ee\u6807\u8bed\u4e49\u81ea\u68c0",
     allPassed: "\u5168\u90e8\u7535\u8def\u5747\u901a\u8fc7\u76ee\u6807\u8bed\u4e49\u81ea\u68c0",
     syntaxOnly: "\u7535\u8def\u5df2\u901a\u8fc7\u8bed\u6cd5\u68c0\u67e5\uff0c\u4f46\u672a\u9a8c\u8bc1\u76ee\u6807\u8bed\u4e49",
+    offlineDemo: "\u5df2\u8f7d\u5165\u7ecf\u9a8c\u8bc1\u7684\u79bb\u7ebf Bell \u793a\u4f8b\uff08\u672a\u8c03\u7528\u5927\u6a21\u578b\uff09",
     circuitsPassed: "\u7535\u8def\u901a\u8fc7",
     svgAria: "\u91cf\u5b50\u7535\u8def\u56fe", readOut: "\u6700\u540e\u8bfb\u53d6\u7ed3\u679c", qubitLabel: "\u4f4d", 
     resultLabel: "\u7ed3\u679c", measureAria: "\u6d4b\u91cf", stepWord: "\u7b2c",
@@ -1449,8 +1451,8 @@ function expandBuilder(runDemo=false, focusPrompt=false, updateRoute=true){
   }
   window.scrollTo({top:0, behavior:"smooth"});
   if(runDemo){
-    $("prompt").value = "做一个贝尔态";
-    build();
+    $("prompt").value = LANG === "en" ? "Offline Bell-state demo" : "离线 Bell 态示例";
+    build("/api/demo");
   }else if(focusPrompt){
     $("prompt").focus();
   }
@@ -1460,7 +1462,7 @@ $("launch-demo").addEventListener("click", () => expandBuilder(true));
 window.addEventListener("popstate", () =>
   $("landing").classList.toggle("builder-mode", location.pathname === "/builder"));
 
-async function build(){
+async function build(endpoint="/api/build"){
   const prompt = $("prompt").value.trim();
   if(!prompt){
     steps([{k:"err", t:I18N[LANG].sayFirst}]);
@@ -1470,7 +1472,7 @@ async function build(){
   busy(true);
   steps([{k:"run", t:I18N[LANG].understanding}]);
   try{
-    const res = await fetch("/api/build", {
+    const res = await fetch(endpoint, {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({prompt, language: LANG})
     });
@@ -1508,7 +1510,9 @@ async function build(){
       state = {diagram:data.diagram, circuitData:data.circuit || null, result:data.probabilities, expected:data.expected_probabilities || null, qasm:data.qasm, explain:data.explain, explanation:data.explanation || null, concept:data.concept || null, tasks:data.tasks || null, circuits:data.circuits || null, validationStage:data.validation_stage || null, backend:null, basis:null};
       const intentLabel = data.intent?.label || I18N[LANG].wantCircuit;
       const compound = (data.tasks || []).length > 1;
-      const list = [{k:"ok", t:`${I18N[LANG].heard}${intentLabel}`}];
+      const list = data.offline_demo
+        ? [{k:"ok", t:I18N[LANG].offlineDemo}]
+        : [{k:"ok", t:`${I18N[LANG].heard}${intentLabel}`}];
       if(compound){
         const knowledgeTask = (state.tasks || []).find(task => task.kind !== "circuit_build" && task.kind !== "backend_select");
         if(knowledgeTask){

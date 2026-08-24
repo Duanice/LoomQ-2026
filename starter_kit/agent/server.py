@@ -7,7 +7,8 @@
     Builder：http://127.0.0.1:8000/builder
 
 界面与正式 agent_chat 使用同一条模型调用、确定性路由和自验链路。
-未设置 LOOMQ_LLM_* 时会明确提示配置，不伪造 Agent 回答。
+未设置 LOOMQ_LLM_* 时仍可阅读教程并运行内置的离线 Bell 示例；只有用户
+真正请求 Agent 时才提示配置，离线示例不会伪装成模型回答。
 """
 
 from __future__ import annotations
@@ -50,6 +51,110 @@ except ImportError:  # 直接运行脚本，或 starter_kit 被提取为评测�
 
 
 UI_PATH = Path(__file__).resolve().parent / "ui.html"
+OFFLINE_DEMO_PATH = UI_PATH.parent.parent / "circuits" / "bell.qasm"
+
+
+def _offline_explanation(language: str) -> dict:
+    """Plain-language copy for the explicitly labelled, fixed offline demo."""
+
+    if language == "en":
+        return {
+            "overview": (
+                "This built-in example creates a Bell pair: the two qubits are "
+                "measured as 00 or 11 with equal probability."
+            ),
+            "steps": [
+                {
+                    "operation_id": "op_0",
+                    "plain": "Put the first qubit into a 50/50 superposition.",
+                    "purpose": "It supplies the two possible branches, 0 and 1.",
+                    "terms": [
+                        {"symbol": "H", "meaning": "a gate that creates superposition"},
+                        {"symbol": "q[0]", "meaning": "the first qubit"},
+                    ],
+                },
+                {
+                    "operation_id": "op_1",
+                    "plain": "Make the second qubit follow the first one.",
+                    "purpose": "This correlates the two read-outs into 00 and 11.",
+                    "terms": [
+                        {"symbol": "CNOT", "meaning": "a controlled flip"},
+                        {"symbol": "q[1]", "meaning": "the second qubit"},
+                    ],
+                },
+            ],
+            "measurement": "Read both qubits: only 00 and 11 should appear, about half each.",
+            "result": "The local simulator verified the Bell state with fidelity 1.00.",
+        }
+    return {
+        "overview": "这个内置示例制备贝尔态：两个量子比特只会一起测得 00 或 11，各约一半。",
+        "steps": [
+            {
+                "operation_id": "op_0",
+                "plain": "先让第 1 个量子比特同时保留 0 和 1 两种可能。",
+                "purpose": "为后续的 00、11 两条结果分支做准备。",
+                "terms": [
+                    {"symbol": "H", "meaning": "制造叠加的量子门"},
+                    {"symbol": "q[0]", "meaning": "程序里的第 1 个量子比特"},
+                ],
+            },
+            {
+                "operation_id": "op_1",
+                "plain": "再让第 2 个量子比特跟随第 1 个一起变化。",
+                "purpose": "把两次读数关联成 00 和 11，而不是各自随机。",
+                "terms": [
+                    {"symbol": "CNOT", "meaning": "由前一个比特控制的翻转门"},
+                    {"symbol": "q[1]", "meaning": "程序里的第 2 个量子比特"},
+                ],
+            },
+        ],
+        "measurement": "最后同时读取两个比特，应只看到 00 和 11，各约 50%。",
+        "result": "本地模拟器已验证该电路的贝尔态保真度为 1.00。",
+    }
+
+
+def offline_demo(language: str = "zh") -> dict:
+    """Run the bundled Bell circuit locally without calling the LLM."""
+
+    qasm = OFFLINE_DEMO_PATH.read_text(encoding="utf-8")
+    result = verify(qasm, target_state="bell", qubit_count=2)
+    if not result.ok or result.circuit is None:
+        raise RuntimeError(f"内置 Bell 示例未通过本地验证：{result.message}")
+
+    request = (
+        "Run the built-in offline Bell-state example"
+        if language == "en"
+        else "运行内置的离线 Bell 态示例"
+    )
+    label = "Offline Bell demo" if language == "en" else "离线 Bell 示例"
+    task = {"id": "task_1", "kind": "circuit_build", "request": request}
+    explanation = _offline_explanation(language)
+    payload = {
+        "kind": "circuit",
+        "ok": True,
+        "offline_demo": True,
+        "source": "starter_kit/circuits/bell.qasm",
+        "intent": {
+            "primary_goal": "circuit_build",
+            "goals": ["circuit_build"],
+            "label": label,
+        },
+        "tasks": [task],
+        "relationships": [],
+        "qasm": qasm,
+        "circuit": asdict(result.circuit),
+        "diagram": diagram(result.circuit),
+        "probabilities": result.probabilities,
+        "expected_probabilities": {"00": 0.5, "11": 0.5},
+        "validation_stage": result.stage,
+        "explanation": explanation,
+        "concept": None,
+        "explain": explanation_text(explanation),
+        "fidelity": result.fidelity,
+        "all_tasks_ok": True,
+    }
+    payload["circuits"] = [_circuit_item(payload, task)]
+    return payload
 
 
 def _decompose(prompt: str, language: str = "zh") -> dict | None:
@@ -442,15 +547,17 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, b"not found", "text/plain; charset=utf-8")
 
     def do_POST(self):
-        if self.path != "/api/build":
+        if self.path not in {"/api/build", "/api/demo"}:
             self._send(404, b"not found", "text/plain; charset=utf-8")
             return
         length = int(self.headers.get("Content-Length", "0"))
         try:
             payload = json.loads(self.rfile.read(length) or b"{}")
-            result = handle_build(
-                str(payload.get("prompt", "")),
-                "en" if str(payload.get("language", "zh")) == "en" else "zh",
+            language = "en" if str(payload.get("language", "zh")) == "en" else "zh"
+            result = (
+                offline_demo(language)
+                if self.path == "/api/demo"
+                else handle_build(str(payload.get("prompt", "")), language)
             )
         except Exception as exc:  # UI 永远不该看到 500。
             result = {"kind": "circuit", "ok": False, "message": f"处理失败：{exc}"}
@@ -470,7 +577,7 @@ def main() -> int:
     mode = (
         "真实模型"
         if all(os.environ.get(name) for name in REQUIRED_ENV)
-        else "未配置模型（请求时会提示设置 LOOMQ_LLM_*）"
+        else "离线体验（教程和 Bell Demo 可用；Agent 请求时才提示 LOOMQ_LLM_*）"
     )
     print(f"LoomQ 量子助手已启动：{url}\n意图解析模式：{mode}\n按 Ctrl+C 停止。")
     if args.open:

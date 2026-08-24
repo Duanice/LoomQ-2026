@@ -8,19 +8,31 @@ LoomQ 面向会描述需求、但不会写 OpenQASM，也不了解量子门和�
 学习者。他们只需输入一句自然语言，就能得到经过本地验证的量子电路、运行结果、
 QASM 和逐步解释。
 
-评委或用户只需准备 Docker 和 Python 3，并由环境注入 `LOOMQ_LLM_BASE_URL`、
-`LOOMQ_LLM_API_KEY` 和 `LOOMQ_LLM_MODEL`。本地开发也可把这三个值写进仓库根目录
-下已被 Git 忽略的 `.env`。从 fork 根目录执行一条命令：
+评委或本地用户只需准备 Docker；宿主机不需要 Python，应用所需 Python 已包含在
+镜像中。从 fork 根目录执行一条命令：
 
 ```bash
 ./starter_kit/run_demo.sh
 ```
 
-脚本会检查配置、构建 Linux/amd64 镜像并启动 Web 界面。默认浏览器地址为
-<http://127.0.0.1:8000>；端口被占用时会自动选择下一个可用端口，也可用
-`LOOMQ_PORT` 指定起始端口。若组委会只提取了
-`starter_kit/`，则在该目录执行 `./run_demo.sh` 即可。API Key 只通过 Docker 环境
-转发，不写入镜像、命令参数或日志。
+脚本会构建 Linux/amd64 镜像、自动选择端口、启动 Web 界面并尝试打开浏览器。
+默认地址为 <http://127.0.0.1:8000>；也可用 `LOOMQ_PORT` 指定起始端口。若组委会
+只提取了 `starter_kit/`，则在该目录执行 `./run_demo.sh` 即可。
+
+- 未安装 Docker：脚本按 macOS、Linux 或 Windows 显示对应的 Docker 官方教程，
+  并询问是否打开下载页，不会擅自安装系统软件。
+- macOS 已安装但未启动 Docker：脚本会打开 Docker Desktop 并等待其就绪。
+- 未配置模型：页面仍会启动，入门教程和明确标注的离线 Bell Demo 可直接体验。
+  离线示例读取 `circuits/bell.qasm` 并真实经过 Parser、模拟器和保真度校验，不会
+  冒充 Agent 生成结果。只有点击“开始构建”调用 Agent 时才提示模型配置。
+
+要使用完整自然语言 Agent，再由环境注入 `LOOMQ_LLM_BASE_URL`、
+`LOOMQ_LLM_API_KEY` 和 `LOOMQ_LLM_MODEL`，或写入仓库根目录下已被 Git 忽略的
+`.env`。API Key 只通过 Docker 环境转发，不写入镜像、命令参数或日志。
+
+真正面向普通用户的发布形态是把同一 Docker 镜像部署为 HTTPS 在线服务，让用户
+只打开浏览器，不要求在个人电脑安装 Docker。公开部署时模型密钥必须只保存在服务
+端，并配置访问控制、限流和费用上限；本地 `127.0.0.1` 地址不是公网地址。
 
 ## 提交结构
 
