@@ -31,22 +31,22 @@ try:
         explanation_text,
     )
     from .presenter import diagram
-    from .verifier import extract_qasm, verify
-except ImportError:  # 直接以脚本方式运行时。
+    from .verifier import circuits_are_distinct, extract_qasm, verify
+except ImportError:  # 直接运行脚本，或 starter_kit 被提取为评测根目录时。
     import sys
 
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from starter_kit.agent.backends import capability_basis, load_backends
-    from starter_kit.agent.core import AgentResult, agent_result
-    from starter_kit.agent.explainer import (
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from agent.backends import capability_basis, load_backends
+    from agent.core import AgentResult, agent_result
+    from agent.explainer import (
         decompose_request,
         explain_circuit,
         explain_question,
         explanation_text,
     )
-    from starter_kit.agent.presenter import diagram
-    from starter_kit.agent.verifier import extract_qasm, verify
-    from starter_kit.llm_client import REQUIRED_ENV
+    from agent.presenter import diagram
+    from agent.verifier import circuits_are_distinct, extract_qasm, verify
+    from llm_client import REQUIRED_ENV
 
 
 UI_PATH = Path(__file__).resolve().parent / "ui.html"
@@ -133,6 +133,7 @@ def _circuit_response(
         "ok": True,
         "intent": intent,
         "tasks": task_plan["tasks"] if task_plan else None,
+        "relationships": task_plan["relationships"] if task_plan else None,
         "qasm": qasm,
         "circuit": asdict(result.circuit),
         "diagram": diagram(result.circuit),
@@ -159,9 +160,16 @@ def _circuit_response(
     first_task = circuit_tasks[0]
     circuits = [_circuit_item(payload, first_task)]
     if expand_tasks:
-        circuits.extend(
-            _run_circuit_task(task, language) for task in circuit_tasks[1:]
-        )
+        for task in circuit_tasks[1:]:
+            circuits.append(
+                _run_circuit_task(
+                    task,
+                    language,
+                    original_prompt=prompt,
+                    relationships=task_plan.get("relationships", []),
+                    completed_circuits=circuits,
+                )
+            )
     payload["circuits"] = circuits
     payload["all_tasks_ok"] = all(item["ok"] for item in circuits)
     return payload
@@ -188,31 +196,138 @@ def _circuit_item(payload: dict, task: dict) -> dict:
     }
 
 
-def _run_circuit_task(task: dict, language: str = "zh") -> dict:
-    try:
-        response = agent_result(task["request"])
-        qasm = extract_qasm(response.text)
-        if not qasm:
-            message = (
-                response.verification.feedback
-                if response.verification is not None
-                else "模型没有返回完整的 OpenQASM 2.0 电路。"
-            )
-            return {
-                "task_id": task["id"],
-                "request": task["request"],
-                "ok": False,
-                "message": message,
+def _execution_prompt(
+    task: dict,
+    original_prompt: str,
+    relationships: list[dict],
+    completed_circuits: list[dict],
+    feedback: str | None = None,
+) -> str:
+    relevant = [
+        relationship
+        for relationship in relationships
+        if task["id"] in relationship["task_ids"]
+    ]
+    if not relevant:
+        return task["request"]
+    envelope = {
+        "original_request": original_prompt,
+        "current_task": task,
+        "relationships": relevant,
+        "completed_circuits": [
+            {
+                "task_id": item["task_id"],
+                "request": item["request"],
+                "qasm": item.get("qasm"),
+                "probabilities": item.get("probabilities"),
             }
-        payload = _circuit_response(
-            task["request"],
-            response,
-            qasm,
-            task_plan={"label": task["request"], "tasks": [task]},
-            expand_tasks=False,
-            language=language,
-        )
-        return _circuit_item(payload, task)
+            for item in completed_circuits
+            if item.get("ok")
+            and any(item["task_id"] in relation["task_ids"] for relation in relevant)
+        ],
+    }
+    if feedback:
+        envelope["validation_feedback"] = feedback
+    return (
+        "Execute exactly the current task in this validated LoomQ task envelope. "
+        "Return the normal planning JSON required by the system prompt.\n\n"
+        + json.dumps(envelope, ensure_ascii=False, separators=(",", ":"))
+    )
+
+
+def _relationship_violation(
+    task: dict,
+    candidate_circuit,
+    relationships: list[dict],
+    completed_circuits: list[dict],
+) -> str | None:
+    for relationship in relationships:
+        if task["id"] not in relationship["task_ids"]:
+            continue
+        for completed in completed_circuits:
+            if (
+                not completed.get("ok")
+                or completed["task_id"] not in relationship["task_ids"]
+            ):
+                continue
+            completed_result = verify(completed["qasm"])
+            if (
+                completed_result.circuit is not None
+                and not circuits_are_distinct(
+                    completed_result.circuit,
+                    candidate_circuit,
+                    relationship["basis"],
+                )
+            ):
+                return (
+                    f"候选电路与任务 {completed['task_id']} 在 "
+                    f"{relationship['basis']} 层面相同，未满足已验证的 "
+                    "pairwise_distinct 关系。请生成真正满足当前任务且不同的电路。"
+                )
+    return None
+
+
+def _run_circuit_task(
+    task: dict,
+    language: str = "zh",
+    *,
+    original_prompt: str = "",
+    relationships: list[dict] | None = None,
+    completed_circuits: list[dict] | None = None,
+) -> dict:
+    relationships = relationships or []
+    completed_circuits = completed_circuits or []
+    feedback = None
+    try:
+        for _ in range(2):
+            response = agent_result(
+                _execution_prompt(
+                    task,
+                    original_prompt,
+                    relationships,
+                    completed_circuits,
+                    feedback,
+                )
+            )
+            qasm = extract_qasm(response.text)
+            if not qasm:
+                feedback = (
+                    response.verification.feedback
+                    if response.verification is not None
+                    else "模型没有返回完整的 OpenQASM 2.0 电路。"
+                )
+                continue
+            result = response.verification or verify(qasm)
+            if not result.ok or result.circuit is None:
+                feedback = result.feedback
+                continue
+            feedback = _relationship_violation(
+                task,
+                result.circuit,
+                relationships,
+                completed_circuits,
+            )
+            if feedback:
+                continue
+            payload = _circuit_response(
+                task["request"],
+                response,
+                qasm,
+                task_plan={
+                    "label": task["request"],
+                    "tasks": [task],
+                    "relationships": [],
+                },
+                expand_tasks=False,
+                language=language,
+            )
+            return _circuit_item(payload, task)
+        return {
+            "task_id": task["id"],
+            "request": task["request"],
+            "ok": False,
+            "message": feedback or "电路任务未能通过验证。",
+        }
     except (RuntimeError, ValueError) as exc:
         return {
             "task_id": task["id"],
@@ -237,7 +352,7 @@ def handle_build(prompt: str, language: str = "zh") -> dict:
         return _circuit_response(prompt, response, qasm, language=language)
     if response.verification is not None and not response.verification.ok:
         answer = response.plan.get("answer") if response.plan else None
-        task_plan = _decompose(prompt)
+        task_plan = _decompose(prompt, language)
         knowledge_question = _knowledge_question(task_plan)
         lesson = None
         if knowledge_question:
@@ -268,7 +383,7 @@ def handle_build(prompt: str, language: str = "zh") -> dict:
                 "explain": reply,
                 "basis": capability_basis(),
             }
-    task_plan = _decompose(prompt)
+    task_plan = _decompose(prompt, language)
     circuit_tasks = [
         task for task in (task_plan or {}).get("tasks", [])
         if task["kind"] == "circuit_build"

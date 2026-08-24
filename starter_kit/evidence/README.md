@@ -59,11 +59,11 @@ evidence/files/spinq-screenshot.png
 ```text
 启动界面或 CLI 的命令：python3 -m starter_kit.agent.server --open
 测试入口或页面地址：http://127.0.0.1:8000
-适合现场体验的 3 个用户任务：
+用于交互体验评测的 3 个用户任务：
 1. 让三个量子比特纠缠在一起，并解释测量结果。
 2. 我想制备贝尔态，请修复：H q[0]; CX q[0] q[1]
 3. 我要运行 15 比特电路，不想排队且不要账号，应该选择哪个平台？
-截图或演示视频：选填，现场可直接运行上述入口
+截图或演示视频：选填；工作人员可直接运行上述入口
 ```
 
 工作人员会在组委会统一模型环境中运行最终代码，测试新手是否看得懂、出错后能否得到有效帮助、结果是否清楚，以及多轮回答是否一致。选手自己的对话截图只用于说明产品流程，不直接证明得分。
@@ -73,7 +73,7 @@ evidence/files/spinq-screenshot.png
 已有内容可以直接引用主 README 或其他项目文档，不必复制到本目录。
 
 ```text
-干净环境中的构建和启动命令：starter_kit/README.md 的“环境”“公开自测”和“L2 统一模型与环境变量”章节；容器复现命令为 cd starter_kit && docker build --platform linux/amd64 -t loomq-submission . && docker run --rm --platform linux/amd64 loomq-submission
+干净环境中的构建和启动命令：从 fork 根目录执行 ./starter_kit/run_demo.sh；脚本会检查配置、自动选择可用端口、构建 Linux/amd64 Docker 镜像并启动 Web 产品。若只提取 starter_kit/，则在评测根目录执行 ./run_demo.sh
 架构说明：starter_kit/README.md 的“统一 L1 架构”“L3 Hybrid-QASM 编译器”和“L2 统一模型与环境变量”章节；L2 的模型、确定性校验和多任务执行边界详见 starter_kit/L2_DESIGN.md
 目标用户和使用场景：没有量子计算背景、希望用自然语言学习概念、生成或修复量子电路、查看模拟结果并确定性选择后端的初学者与开发者
 完整使用流程：配置 LOOMQ_LLM_* 后执行 python3 -m starter_kit.agent.server --open；在欢迎页直接体验或进入专注模式，输入自然语言任务后依次查看电路图、运行结果、QASM 与白话解释；“文件”菜单可在本机恢复最近对话或导出 QASM，“帮助”菜单可随时打开入门教程

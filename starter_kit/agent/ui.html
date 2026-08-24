@@ -96,8 +96,13 @@ body{
 .window:fullscreen,.window.window-maximized{
   width:100vw; height:100vh; max-width:none; margin:0; border-radius:0;
   overflow:auto; background:#fff; box-shadow:none;
+  font-size:clamp(16px,.62vw,18px);
 }
 .window.window-maximized{position:fixed; inset:0; z-index:50}
+.window:fullscreen :is(.titlebar,.menubar,.help-rail p,legend,label,textarea,input[type=text],button,.tab,.panel pre,.circuit-detail,.circuit-legend,.basis,.lesson-summary,.lesson-card p,.circuit-lesson-step p,.task-heading strong,.task-heading small,.hist .v,.status),
+.window.window-maximized :is(.titlebar,.menubar,.help-rail p,legend,label,textarea,input[type=text],button,.tab,.panel pre,.circuit-detail,.circuit-legend,.basis,.lesson-summary,.lesson-card p,.circuit-lesson-step p,.task-heading strong,.task-heading small,.hist .v,.status){font-size:1em}
+.window:fullscreen :is(.tbtn,.lang-toggle,.lesson-kicker,.term-chip,.task-heading span),
+.window.window-maximized :is(.tbtn,.lang-toggle,.lesson-kicker,.term-chip,.task-heading span){font-size:.78em}
 .menubar{
   position:relative; display:flex; align-items:center; gap:16px; padding:7px 10px; background:var(--y2k-panel);
   border-bottom:2px solid var(--y2k-ink); font-size:13px; font-weight:600;
@@ -642,7 +647,7 @@ measure q -> c;        ← 全部测量，结果存进格子</pre></div>
 "use strict";
 const $ = (id) => document.getElementById(id);
 function emptyState(){
-  return {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:"", explanation:null, concept:null, tasks:null, circuits:null, backend:null, basis:null};
+  return {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:"", explanation:null, concept:null, tasks:null, circuits:null, validationStage:null, backend:null, basis:null};
 }
 let state = emptyState();
 let stepState = [];
@@ -875,7 +880,8 @@ function circuitItems(){
     probabilities:state.result,
     expected_probabilities:state.expected,
     qasm:state.qasm,
-    explanation:state.explanation
+    explanation:state.explanation,
+    validation_stage:state.validationStage
   }];
 }
 
@@ -993,7 +999,7 @@ const I18N = {
     runFailed: "Run failed", noQasm: "QASM not generated",
     understandQ: "Understand the question", conceptMeaning: "Concept & meaning",
     noExplain: "Explanation not available", task: "Task", goal: "Goal:",
-    builtChecked: "Built and self-checked against your goal",
+    builtChecked: "Built and checked locally",
     stepFallback: "Plain-language explanation for step %s is not available.",
     sayFirst: "Tell me what you want first \u2014 e.g. \"entangle three qubits together\".",
     understanding: "Understanding what you mean\u2026",
@@ -1005,6 +1011,7 @@ const I18N = {
     understoodSep: "explained separately", taskGenRun: "circuit generated and run",
     somePassed: "Some tasks failed the target-semantics self-check",
     allPassed: "All circuits passed the target-semantics self-check",
+    syntaxOnly: "Circuits passed syntax checks; target semantics were not verified",
     circuitsPassed: "circuits passed",
     svgAria: "quantum circuit diagram", readOut: "read out", qubitLabel: "qubit",
     resultLabel: "result", measureAria: "measure", stepWord: "Step",
@@ -1049,7 +1056,7 @@ const I18N = {
     runFailed: "\u8fd0\u884c\u5931\u8d25", noQasm: "QASM \u672a\u751f\u6210",
     understandQ: "\u7406\u89e3\u95ee\u9898", conceptMeaning: "\u6982\u5ff5\u4e0e\u542b\u4e49",
     noExplain: "\u89e3\u91ca\u6682\u65f6\u4e0d\u53ef\u7528", task: "\u4efb\u52a1", goal: "\u76ee\u6807\uff1a",
-    builtChecked: "\u5df2\u6309\u7528\u6237\u76ee\u6807\u751f\u6210\u5e76\u81ea\u68c0",
+    builtChecked: "\u5df2\u751f\u6210\u5e76\u5b8c\u6210\u672c\u5730\u68c0\u67e5",
     stepFallback: "\u7b2c %s \u6b65\u7684\u767d\u8bdd\u89e3\u91ca\u6682\u65f6\u4e0d\u53ef\u7528\u3002",
     sayFirst: "\u5148\u8bf4\u4e00\u53e5\u4f60\u60f3\u505a\u4ec0\u4e48 \u2014\u2014 \u6bd4\u5982\u300c\u8ba9\u4e09\u4e2a\u91cf\u5b50\u6bd4\u7279\u7ea0\u7f20\u5728\u4e00\u8d77\u300d\u3002",
     understanding: "\u6b63\u5728\u7406\u89e3\u4f60\u7684\u610f\u601d\u2026",
@@ -1061,6 +1068,7 @@ const I18N = {
     understoodSep: "\u7406\u89e3\u95ee\u9898\u5df2\u5355\u72ec\u89e3\u91ca", taskGenRun: "\u7535\u8def\u5df2\u751f\u6210\u5e76\u8fd0\u884c",
     somePassed: "\u90e8\u5206\u4efb\u52a1\u672a\u901a\u8fc7\u76ee\u6807\u8bed\u4e49\u81ea\u68c0",
     allPassed: "\u5168\u90e8\u7535\u8def\u5747\u901a\u8fc7\u76ee\u6807\u8bed\u4e49\u81ea\u68c0",
+    syntaxOnly: "\u7535\u8def\u5df2\u901a\u8fc7\u8bed\u6cd5\u68c0\u67e5\uff0c\u4f46\u672a\u9a8c\u8bc1\u76ee\u6807\u8bed\u4e49",
     circuitsPassed: "\u7535\u8def\u901a\u8fc7",
     svgAria: "\u91cf\u5b50\u7535\u8def\u56fe", readOut: "\u6700\u540e\u8bfb\u53d6\u7ed3\u679c", qubitLabel: "\u4f4d", 
     resultLabel: "\u7ed3\u679c", measureAria: "\u6d4b\u91cf", stepWord: "\u7b2c",
@@ -1497,7 +1505,7 @@ async function build(){
         x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
       render("explain");
     } else if(data.ok){
-      state = {diagram:data.diagram, circuitData:data.circuit || null, result:data.probabilities, expected:data.expected_probabilities || null, qasm:data.qasm, explain:data.explain, explanation:data.explanation || null, concept:data.concept || null, tasks:data.tasks || null, circuits:data.circuits || null, backend:null, basis:null};
+      state = {diagram:data.diagram, circuitData:data.circuit || null, result:data.probabilities, expected:data.expected_probabilities || null, qasm:data.qasm, explain:data.explain, explanation:data.explanation || null, concept:data.concept || null, tasks:data.tasks || null, circuits:data.circuits || null, validationStage:data.validation_stage || null, backend:null, basis:null};
       const intentLabel = data.intent?.label || I18N[LANG].wantCircuit;
       const compound = (data.tasks || []).length > 1;
       const list = [{k:"ok", t:`${I18N[LANG].heard}${intentLabel}`}];
@@ -1512,9 +1520,13 @@ async function build(){
         ? {k:"ok", t:`${I18N[LANG].task} ${taskIdNumber(item.task_id)}: ${I18N[LANG].taskGenRun}`}
         : {k:"err", t:`${I18N[LANG].task} ${taskIdNumber(item.task_id)}: ${item.message}`}
       ));
+      const semanticChecksPassed = circuitItems().filter(item => item.ok).every(item =>
+        ["fidelity", "distribution"].includes(item.validation_stage));
       list.push(data.all_tasks_ok === false
         ? {k:"err", t:I18N[LANG].somePassed}
-        : {k:"ok", t:I18N[LANG].allPassed});
+        : semanticChecksPassed
+          ? {k:"ok", t:I18N[LANG].allPassed}
+          : {k:"run", t:I18N[LANG].syntaxOnly});
       steps(list);
       const passedCircuits = circuitItems().filter(item => item.ok).length;
       $("fid").textContent = circuitItems().length > 1 ? `${passedCircuits}/${circuitItems().length} ${I18N[LANG].circuitsPassed}`

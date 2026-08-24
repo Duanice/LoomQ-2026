@@ -41,10 +41,20 @@ For circuit generation or repair:
   to make a candidate circuit pass validation.
 - If one prompt requests multiple separate circuits, this response describes
   only the first requested circuit. Do not merge their target distributions;
-  LoomQ executes later circuit tasks independently.
+  LoomQ executes later circuit tasks with their validated relationship context.
+- A later circuit request may arrive as a JSON execution envelope containing
+  original_request, current_task, relationships, and completed_circuits. Treat
+  current_task.request as the deliverable and satisfy every relationship that
+  names its task ID. A pairwise_distinct relationship compares the current
+  circuit with all named completed circuits using its declared basis. Do not
+  copy or cosmetically rename a completed circuit.
 - Declare one qreg and one creg, apply gates, then measure every requested qubit.
+- The first two statements must be exactly `OPENQASM 2.0;` and
+  `include "qelib1.inc";`. Do not use or add any other include.
 - Use only h, x, s, sdg, t, tdg, rz(theta), ry(theta), cx, cu1(theta), swap,
   and ccx. Gate names must be lowercase and every statement ends with a semicolon.
+- Angles must be finite expressions containing only numbers, pi, parentheses,
+  and +, -, *, /, or ^; never divide by zero or use names/functions other than pi.
 - Prefer "measure q -> c;" for full measurement.
 - target_state describes the intended state, not the wording of the broken code.
 

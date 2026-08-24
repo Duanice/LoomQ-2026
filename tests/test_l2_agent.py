@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import subprocess
 import threading
 import unittest
 from http.client import HTTPConnection
@@ -17,8 +18,12 @@ from starter_kit.agent.explainer import (
 )
 from starter_kit.agent.presenter import __file__ as presenter_path
 from starter_kit.agent.server import Handler, UI_PATH, handle_build
-from starter_kit.agent.verifier import verify
+from starter_kit.agent.verifier import circuits_are_distinct, extract_qasm, verify
+from starter_kit.qasm_parser import GATES, parse_qasm
 from starter_kit.evaluator import evaluate_l2
+
+
+RUN_DEMO_PATH = UI_PATH.parents[1] / "run_demo.sh"
 
 
 GHZ_QASM = '''OPENQASM 2.0;
@@ -28,6 +33,42 @@ creg c[3];
 h q[0];
 cx q[0], q[1];
 cx q[1], q[2];
+measure q -> c;'''
+
+GHZ5_QASM = '''OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[5];
+creg c[5];
+h q[0];
+cx q[0], q[1];
+cx q[1], q[2];
+cx q[2], q[3];
+cx q[3], q[4];
+measure q -> c;'''
+
+BELL_QASM = '''OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[2];
+creg c[2];
+h q[0];
+cx q[0], q[1];
+measure q -> c;'''
+
+REDUNDANT_BELL_QASM = '''OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[2];
+creg c[2];
+x q[1];
+x q[1];
+h q[0];
+cx q[0], q[1];
+measure q -> c;'''
+
+SINGLE_QUBIT_PLUS_QASM = '''OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[1];
+creg c[1];
+h q[0];
 measure q -> c;'''
 
 WRONG_TWO_OUTPUT_QASM = '''OPENQASM 2.0;
@@ -89,6 +130,16 @@ h q[0];
 h q[1];
 h q[2];
 h q[3];
+measure q -> c;'''
+
+ALL_GATES_QASM = '''OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[3];
+creg c[3];
+h q[0]; x q[0]; s q[0]; sdg q[0]; t q[0]; tdg q[0];
+rz(pi/2) q[0]; ry(-pi/4) q[0];
+cx q[0], q[1]; cu1(pi/3) q[0], q[1]; swap q[1], q[2];
+ccx q[0], q[1], q[2];
 measure q -> c;'''
 
 
@@ -179,7 +230,11 @@ def concept_explanation(
     )
 
 
-def decomposition(tasks=None, label="你想构建一个三比特量子电路"):
+def decomposition(
+    tasks=None,
+    label="你想构建一个三比特量子电路",
+    relationships=None,
+):
     tasks = tasks or [("circuit_build", "构建并运行一个三比特量子电路")]
     return json.dumps(
         {
@@ -188,6 +243,7 @@ def decomposition(tasks=None, label="你想构建一个三比特量子电路"):
                 {"id": f"task_{index}", "kind": kind, "request": request}
                 for index, (kind, request) in enumerate(tasks, 1)
             ],
+            "relationships": relationships or [],
         },
         ensure_ascii=False,
     )
@@ -215,6 +271,29 @@ class ModelHandler(BaseHTTPRequestHandler):
 
 
 class L2AgentTests(unittest.TestCase):
+    def test_one_command_demo_launcher_is_valid_and_starts_the_real_ui(self):
+        subprocess.run(["bash", "-n", str(RUN_DEMO_PATH)], check=True)
+        source = RUN_DEMO_PATH.read_text(encoding="utf-8")
+
+        self.assertTrue(os.access(RUN_DEMO_PATH, os.X_OK))
+        self.assertIn("docker build --platform linux/amd64", source)
+        self.assertIn("probe.bind", source)
+        self.assertIn("自动改用", source)
+        self.assertIn("python -m agent.server --host 0.0.0.0", source)
+        self.assertIn("-e LOOMQ_LLM_API_KEY", source)
+        self.assertNotIn("LOOMQ_LLM_API_KEY=", source)
+
+    def test_server_imports_when_starter_kit_is_the_runtime_root(self):
+        completed = subprocess.run(
+            ["python3", "-c", "import agent.server"],
+            cwd=UI_PATH.parents[1],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
     def setUp(self):
         ModelHandler.responses = []
         ModelHandler.payloads = []
@@ -256,6 +335,109 @@ class L2AgentTests(unittest.TestCase):
         self.assertEqual(len(ModelHandler.payloads), 2)
         retry_messages = ModelHandler.payloads[1]["messages"]
         self.assertIn("解析器报错", retry_messages[-1]["content"])
+
+    def test_l2_verifier_rejects_missing_qelib1_include(self):
+        qasm = BELL_QASM.replace('include "qelib1.inc";\n', "")
+
+        result = verify(qasm, "bell", 2)
+
+        self.assertFalse(result.ok)
+        self.assertEqual(result.stage, "parse")
+        self.assertIn('include "qelib1.inc"', result.message)
+
+    def test_l2_verifier_rejects_other_include(self):
+        candidates = (
+            BELL_QASM.replace("qelib1.inc", "stdgates.inc"),
+            BELL_QASM.replace(
+                'include "qelib1.inc";',
+                'include "qelib1.inc";\ninclude "stdgates.inc";',
+            ),
+        )
+
+        for qasm in candidates:
+            with self.subTest(qasm=qasm):
+                result = verify(qasm, "bell", 2)
+                self.assertFalse(result.ok)
+                self.assertEqual(result.stage, "parse")
+                self.assertIn('include "qelib1.inc"', result.message)
+
+    def test_invalid_qasm2_envelope_is_retried(self):
+        invalid = GHZ_QASM.replace("qelib1.inc", "stdgates.inc")
+        ModelHandler.responses = [plan(qasm=invalid), plan()]
+        with mock.patch.dict(os.environ, self.environment, clear=True):
+            reply = adapter.agent_chat("生成三比特 GHZ 态并全测量")
+
+        self.assertIn('include "qelib1.inc"', reply)
+        self.assertEqual(len(ModelHandler.payloads), 2)
+        feedback = ModelHandler.payloads[1]["messages"][-1]["content"]
+        self.assertIn('include "qelib1.inc"', feedback)
+
+    def test_outside_whitelist_gate_is_retried(self):
+        invalid_gates = ("z q[0];", "u3(pi/2,0,pi) q[0];")
+        for gate in invalid_gates:
+            with self.subTest(gate=gate):
+                invalid = BELL_QASM.replace("h q[0];", gate)
+                ModelHandler.responses = [
+                    plan(target_state="bell", num_qubits=2, qasm=invalid),
+                    plan(target_state="bell", num_qubits=2, qasm=BELL_QASM),
+                ]
+                ModelHandler.payloads = []
+                with mock.patch.dict(os.environ, self.environment, clear=True):
+                    reply = adapter.agent_chat("生成两比特 Bell 态并全测量")
+
+                self.assertIn("h q[0]", reply)
+                self.assertEqual(len(ModelHandler.payloads), 2)
+                feedback = ModelHandler.payloads[1]["messages"][-1]["content"]
+                self.assertIn("QASM 无法解析", feedback)
+
+    def test_agent_final_qasm_contains_only_whitelist_gates(self):
+        ModelHandler.responses = [
+            plan(target_state="custom", num_qubits=3, qasm=ALL_GATES_QASM)
+        ]
+        with mock.patch.dict(os.environ, self.environment, clear=True):
+            reply = adapter.agent_chat("生成一个覆盖白名单门的三比特电路")
+
+        qasm = extract_qasm(reply)
+        self.assertIsNotNone(qasm)
+        names = {operation.name for operation in parse_qasm(qasm).operations}
+        self.assertEqual(names, set(GATES))
+
+    def test_invalid_angle_expression_is_retried_instead_of_crashing(self):
+        invalid = BELL_QASM.replace("h q[0];", "rz(pi/0) q[0];")
+        ModelHandler.responses = [
+            plan(target_state="bell", num_qubits=2, qasm=invalid),
+            plan(target_state="bell", num_qubits=2, qasm=BELL_QASM),
+        ]
+        with mock.patch.dict(os.environ, self.environment, clear=True):
+            reply = adapter.agent_chat("生成两比特 Bell 态并全测量")
+
+        self.assertIn("h q[0]", reply)
+        self.assertEqual(len(ModelHandler.payloads), 2)
+        feedback = ModelHandler.payloads[1]["messages"][-1]["content"]
+        self.assertIn("非法角度表达式", feedback)
+
+    def test_target_width_mismatch_is_retried_instead_of_passing_syntax_only(self):
+        ModelHandler.responses = [
+            plan(num_qubits=5, qasm=GHZ_QASM),
+            plan(num_qubits=5, qasm=GHZ5_QASM),
+        ]
+        with mock.patch.dict(os.environ, self.environment, clear=True):
+            reply = adapter.agent_chat("生成五比特 GHZ 态并全测量")
+
+        self.assertIn("qreg q[5]", reply)
+        self.assertEqual(len(ModelHandler.payloads), 2)
+        feedback = ModelHandler.payloads[1]["messages"][-1]["content"]
+        self.assertIn("目标要求 5 个量子比特", feedback)
+        self.assertIn("生成电路却声明了 3 个", feedback)
+
+    def test_unknown_target_remains_syntax_only_without_claiming_semantic_pass(self):
+        result = verify(BELL_QASM, "custom", 2)
+        ui_source = UI_PATH.read_text(encoding="utf-8")
+
+        self.assertTrue(result.ok)
+        self.assertEqual(result.stage, "syntax_only")
+        self.assertIn("syntaxOnly", ui_source)
+        self.assertIn('["fidelity", "distribution"].includes(item.validation_stage)', ui_source)
 
     def test_backend_constraints_are_resolved_from_the_official_table(self):
         ModelHandler.responses = [
@@ -616,6 +798,107 @@ class L2AgentTests(unittest.TestCase):
         self.assertNotEqual(result["circuits"][1]["qasm"], WRONG_WILDCARD_QASM)
         self.assertEqual(len(ModelHandler.payloads), 8)
 
+    def test_related_circuit_tasks_receive_context_and_retry_duplicates(self):
+        prompt = "构建两个不同的量子电路"
+        relationship = {
+            "type": "pairwise_distinct",
+            "task_ids": ["task_1", "task_2"],
+            "basis": "quantum_state",
+        }
+        ModelHandler.responses = [
+            plan(
+                target_state="bell",
+                num_qubits=2,
+                qasm=BELL_QASM,
+            ),
+            beginner_explanation(2),
+            decomposition(
+                [
+                    ("circuit_build", "构建一个两比特关联电路"),
+                    ("circuit_build", "构建一个单比特叠加电路"),
+                ],
+                prompt,
+                [relationship],
+            ),
+            plan(
+                target_state="bell",
+                num_qubits=2,
+                qasm=BELL_QASM,
+            ),
+            plan(
+                target_state="uniform",
+                num_qubits=1,
+                qasm=SINGLE_QUBIT_PLUS_QASM,
+            ),
+            beginner_explanation(1),
+        ]
+        with mock.patch.dict(os.environ, self.environment, clear=True):
+            result = handle_build(prompt)
+
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["all_tasks_ok"])
+        self.assertEqual(result["relationships"], [relationship])
+        self.assertEqual(len(result["circuits"]), 2)
+        self.assertNotEqual(
+            result["circuits"][0]["qasm"], result["circuits"][1]["qasm"]
+        )
+        first_attempt = ModelHandler.payloads[3]["messages"][1]["content"]
+        retry_attempt = ModelHandler.payloads[4]["messages"][1]["content"]
+        self.assertIn('"relationships"', first_attempt)
+        self.assertIn("OPENQASM 2.0", first_attempt)
+        self.assertIn('"validation_feedback"', retry_attempt)
+
+    def test_unresolved_cross_task_duplicate_is_not_reported_as_passing(self):
+        prompt = "构建两个不同的量子电路"
+        relationship = {
+            "type": "pairwise_distinct",
+            "task_ids": ["task_1", "task_2"],
+            "basis": "quantum_state",
+        }
+        duplicate = plan(
+            target_state="bell",
+            num_qubits=2,
+            qasm=BELL_QASM,
+        )
+        ModelHandler.responses = [
+            duplicate,
+            beginner_explanation(2),
+            decomposition(
+                [
+                    ("circuit_build", "构建第一个量子电路"),
+                    ("circuit_build", "构建第二个量子电路"),
+                ],
+                prompt,
+                [relationship],
+            ),
+            duplicate,
+            duplicate,
+        ]
+        with mock.patch.dict(os.environ, self.environment, clear=True):
+            result = handle_build(prompt)
+
+        self.assertTrue(result["ok"])
+        self.assertFalse(result["all_tasks_ok"])
+        self.assertTrue(result["circuits"][0]["ok"])
+        self.assertFalse(result["circuits"][1]["ok"])
+        self.assertIn("pairwise_distinct", result["circuits"][1]["message"])
+
+    def test_relation_basis_is_checked_on_shared_circuit_ir(self):
+        bell = parse_qasm(BELL_QASM)
+        redundant_bell = parse_qasm(REDUNDANT_BELL_QASM)
+
+        self.assertTrue(
+            circuits_are_distinct(bell, redundant_bell, "circuit_structure")
+        )
+        self.assertFalse(
+            circuits_are_distinct(bell, redundant_bell, "quantum_state")
+        )
+        self.assertFalse(
+            circuits_are_distinct(
+                bell, redundant_bell, "measurement_distribution"
+            )
+        )
+
     def test_custom_output_distribution_rejects_uniform_circuit(self):
         expected = {"001": 0.5, "110": 0.5}
 
@@ -882,6 +1165,8 @@ class L2AgentTests(unittest.TestCase):
         self.assertIn('await appWindow.requestFullscreen()', ui_source)
         self.assertIn('await document.exitFullscreen()', ui_source)
         self.assertIn('document.addEventListener("fullscreenchange", updateWindowControls)', ui_source)
+        self.assertIn("font-size:clamp(16px,.62vw,18px)", ui_source)
+        self.assertIn(".window.window-maximized :is(.titlebar,.menubar", ui_source)
 
     def test_tutorial_dialog_is_viewport_centered_with_safe_scroll(self):
         ui_source = UI_PATH.read_text(encoding="utf-8")
@@ -960,6 +1245,7 @@ class L2AgentTests(unittest.TestCase):
         ui_source = UI_PATH.read_text(encoding="utf-8")
         skill_source = QUESTION_SKILL_PATH.read_text(encoding="utf-8")
         decompose_source = DECOMPOSE_SKILL_PATH.read_text(encoding="utf-8")
+        server_source = (UI_PATH.parent / "server.py").read_text(encoding="utf-8")
 
         self.assertIn("function conceptLessonHtml(lesson)", ui_source)
         self.assertIn('visual-${visualType}', ui_source)
@@ -993,6 +1279,10 @@ class L2AgentTests(unittest.TestCase):
         self.assertIn("Do not let a later construction request absorb", decompose_source)
         self.assertIn("task kinds may repeat", decompose_source)
         self.assertIn("multiple requested artifacts", decompose_source)
+        self.assertIn("Cross-task Relationships", decompose_source)
+        self.assertIn("pairwise_distinct", decompose_source)
+        self.assertNotIn('if "不同"', server_source)
+        self.assertNotIn('if "两个"', server_source)
         self.assertNotIn("000", decompose_source)
         self.assertNotIn("111", decompose_source)
         self.assertNotIn("101", decompose_source)

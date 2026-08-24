@@ -256,7 +256,7 @@ def _validate_lesson(value: Any) -> dict[str, Any]:
 
 
 def _validate_decomposition(value: Any) -> dict[str, Any]:
-    result = _object(value, {"label", "tasks"}, "root")
+    result = _object(value, {"label", "tasks", "relationships"}, "root")
     raw_tasks = result["tasks"]
     allowed = {
         "quantum_concept",
@@ -282,7 +282,48 @@ def _validate_decomposition(value: Any) -> dict[str, Any]:
                 "request": _text(task["request"], 180, "task request"),
             }
         )
-    return {"label": _text(result["label"], 64, "label"), "tasks": tasks}
+    task_kinds = {task["id"]: task["kind"] for task in tasks}
+    raw_relationships = result["relationships"]
+    if not isinstance(raw_relationships, list) or len(raw_relationships) > 3:
+        raise ValueError("relationships must contain 0 to 3 items")
+    relationships = []
+    seen = set()
+    for index, raw_relationship in enumerate(raw_relationships):
+        relationship = _object(
+            raw_relationship,
+            {"type", "task_ids", "basis"},
+            f"relationships[{index}]",
+        )
+        task_ids = relationship["task_ids"]
+        if (
+            relationship["type"] != "pairwise_distinct"
+            or relationship["basis"] not in {
+                "quantum_state",
+                "measurement_distribution",
+                "circuit_structure",
+            }
+            or not isinstance(task_ids, list)
+            or not 2 <= len(task_ids) <= 3
+            or len(set(task_ids)) != len(task_ids)
+            or any(task_kinds.get(task_id) != "circuit_build" for task_id in task_ids)
+        ):
+            raise ValueError(f"relationships[{index}] is invalid")
+        signature = (relationship["type"], tuple(task_ids), relationship["basis"])
+        if signature in seen:
+            raise ValueError(f"relationships[{index}] is duplicated")
+        seen.add(signature)
+        relationships.append(
+            {
+                "type": relationship["type"],
+                "task_ids": task_ids,
+                "basis": relationship["basis"],
+            }
+        )
+    return {
+        "label": _text(result["label"], 64, "label"),
+        "tasks": tasks,
+        "relationships": relationships,
+    }
 
 
 def _run_skill(
