@@ -88,7 +88,8 @@ evidence/files/spinq-screenshot.png
 ```text
 指令编码规格：starter_kit/QUANTUM_RISCV_SPEC.md
 模拟器扩展实现：starter_kit/riscv_emulator.py（custom-0 机器字编码、解码、状态向量门执行、测量坍缩及经典寄存器写回）
-端到端测试命令：python3 -m unittest starter_kit.test_quantum_riscv -v
+端到端测试（从 fork 根目录运行）：python3 -m unittest starter_kit.test_quantum_riscv -v
+端到端测试（从提取后的 starter_kit 评测根目录运行）：python3 -m unittest test_quantum_riscv -v
 ```
 
 ## 新手引导与视觉叙事 Bonus
