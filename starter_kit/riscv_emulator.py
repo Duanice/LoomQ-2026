@@ -16,6 +16,7 @@ except ImportError:  # Support ``python starter_kit/riscv_emulator.py``.
 
 QUANTUM_OPCODE = 0x0B  # RISC-V custom-0 major opcode.
 ANGLE_SCALE = math.pi / 1024
+MAX_ABS_ANGLE = 1_000_000_000_000.0
 MAX_EMULATED_QUBITS = 16
 
 _R_GATE_CODES = {
@@ -105,6 +106,10 @@ def encode_quantum_instruction(
     if name in _I_GATE_FUNCT3:
         if parameter is None or not math.isfinite(parameter):
             raise ValueError(f"{name} 需要有限角度参数")
+        if abs(parameter) > MAX_ABS_ANGLE:
+            raise ValueError(
+                f"{name} 角度绝对值不能超过 {MAX_ABS_ANGLE:g} 弧度"
+            )
         normalized = (parameter + math.pi) % (2 * math.pi) - math.pi
         immediate = round(normalized / ANGLE_SCALE)
         target = qubits[-1]
