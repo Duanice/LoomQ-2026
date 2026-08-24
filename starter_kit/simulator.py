@@ -79,7 +79,7 @@ def _apply_swap(state: list[complex], first: int, second: int) -> None:
             state[index], state[partner] = state[partner], state[index]
 
 
-def _apply_operation(state: list[complex], operation: Operation) -> None:
+def apply_operation(state: list[complex], operation: Operation) -> None:
     name = operation.name
     qubits = operation.qubits
     inverse_sqrt_two = 1 / math.sqrt(2)
@@ -138,7 +138,7 @@ def simulate(circuit: Circuit) -> list[complex]:
     state = [0j] * (1 << circuit.qubit_count)
     state[0] = 1 + 0j
     for operation in circuit.operations:
-        _apply_operation(state, operation)
+        apply_operation(state, operation)
     return state
 
 

@@ -266,6 +266,20 @@ docker run --rm --platform linux/amd64 \
 
 固定种子 `20260825` 的完整基线结果见 [`l1-defense-report.json`](l1-defense-report.json)。
 
+## Bonus：可执行量子 RISC-V 自定义指令
+
+[`QUANTUM_RISCV_SPEC.md`](QUANTUM_RISCV_SPEC.md) 定义了基于 RISC-V
+`custom-0` opcode (`0x0B`) 的 32 位量子指令。实现不是文本助记符打表：共享
+`Circuit` IR 会被编码为机器字，扩展后的 `riscv_emulator.py` 在执行阶段重新解码，
+执行全部 12 个门，并把测量结果写入 `x10..x31` 供经典指令继续使用。
+
+```bash
+python3 -m unittest starter_kit.test_quantum_riscv -v
+```
+
+该命令验证编码规格、原始机器字解码、Bell/GHZ 状态、测量坍缩、量子与经典
+RISC-V 混跑及非法编码拒绝，形成 Bonus 要求的最小端到端闭环。
+
 退出码：全部公开测试通过为 `0`，存在失败为 `1`。`report.json` 只表示公开契约自测结果，不是正式分数。
 
 正式评测由组织方在隔离环境运行：每个 case 使用独立进程、私有随机种子和私有期望值；提交进程不会获得理想分布文件。组织方还会分别验证目标原生 IR、真机证据、架构与交互体验。

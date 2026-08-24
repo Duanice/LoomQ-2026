@@ -11,7 +11,7 @@
 - [x] L1 真机
 - [x] L2 交互体验
 - [x] 工程与产品化
-- [ ] 自定义量子 RISC-V Bonus
+- [x] 自定义量子 RISC-V Bonus
 - [x] 新手引导与视觉叙事 Bonus
 
 ## L1 真机
@@ -86,9 +86,9 @@ evidence/files/spinq-screenshot.png
 以下三项必须齐全且测试通过，才获得 8 分：
 
 ```text
-指令编码规格：[填写文档路径]
-模拟器扩展实现：[填写代码路径]
-端到端测试命令：[填写命令或文档路径]
+指令编码规格：starter_kit/QUANTUM_RISCV_SPEC.md
+模拟器扩展实现：starter_kit/riscv_emulator.py（custom-0 机器字编码、解码、状态向量门执行、测量坍缩及经典寄存器写回）
+端到端测试命令：python3 -m unittest starter_kit.test_quantum_riscv -v
 ```
 
 ## 新手引导与视觉叙事 Bonus
