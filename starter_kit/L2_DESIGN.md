@@ -115,7 +115,7 @@ starter_kit/
 
 ## 5. 配置和启动
 
-客观接口和 UI 使用同一套配置：
+完整 Agent 的客观接口和 UI 使用同一套配置：
 
 ```bash
 export LOOMQ_LLM_BASE_URL="..."
@@ -129,8 +129,13 @@ export LOOMQ_LLM_MODEL="deepseek-v4-flash"
 ./starter_kit/run_demo.sh
 ```
 
-脚本会加载已被 Git 忽略的本地 `.env`（如存在）、构建 Linux/amd64 镜像、自动选择
-可用端口并启动页面。也可直接运行：
+脚本只要求宿主机安装 Docker，不要求宿主机 Python。它会加载已被 Git 忽略且配置
+完整的本地 `.env`（如存在）、构建 Linux/amd64 镜像、自动选择可用端口并启动页面。
+没有模型配置时不会退出：教程和 `/api/demo` 离线 Bell 示例仍可用；正常
+`/api/build` 请求会明确提示配置，不会返回伪造 Agent 答案。离线示例来自公开
+`circuits/bell.qasm`，并通过与 L2 相同的 Parser、模拟器和保真度校验链路。
+
+本地开发者已有 Python 环境时也可直接运行：
 
 ```bash
 python3 -m starter_kit.agent.server --open

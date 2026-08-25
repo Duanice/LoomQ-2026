@@ -17,7 +17,7 @@ from starter_kit.agent.explainer import (
     SKILL_PATH,
 )
 from starter_kit.agent.presenter import __file__ as presenter_path
-from starter_kit.agent.server import Handler, UI_PATH, handle_build
+from starter_kit.agent.server import Handler, UI_PATH, handle_build, offline_demo
 from starter_kit.agent.verifier import circuits_are_distinct, extract_qasm, verify
 from starter_kit.qasm_parser import GATES, parse_qasm
 from starter_kit.evaluator import evaluate_l2
@@ -277,8 +277,20 @@ class L2AgentTests(unittest.TestCase):
 
         self.assertTrue(os.access(RUN_DEMO_PATH, os.X_OK))
         self.assertIn("docker build --platform linux/amd64", source)
-        self.assertIn("probe.bind", source)
+        self.assertIn("docker run --rm -d --platform linux/amd64", source)
+        self.assertIn('docker exec "$CONTAINER_ID" python -c', source)
+        self.assertIn("urllib.request.urlopen", source)
+        self.assertIn("等待 Web 页面就绪", source)
+        self.assertIn("wait_for_http", source)
+        self.assertNotIn("command -v python3", source)
+        self.assertNotIn("probe.bind", source)
         self.assertIn("自动改用", source)
+        self.assertIn("open -a Docker", source)
+        self.assertIn("不会擅自安装系统软件", source)
+        self.assertIn("docs.docker.com/desktop/setup/install/mac-install/", source)
+        self.assertIn("docs.docker.com/engine/install/", source)
+        self.assertIn("docs.docker.com/desktop/setup/install/windows-install/", source)
+        self.assertIn("离线体验模式", source)
         self.assertIn("python -m agent.server --host 0.0.0.0", source)
         self.assertIn("-e LOOMQ_LLM_API_KEY", source)
         self.assertNotIn("LOOMQ_LLM_API_KEY=", source)
@@ -1137,6 +1149,46 @@ class L2AgentTests(unittest.TestCase):
         self.assertIn("LOOMQ_LLM_API_KEY", result["message"])
         self.assertEqual(ModelHandler.payloads, [])
 
+    def test_offline_bell_demo_needs_no_model_and_is_locally_verified(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            result = offline_demo()
+
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["offline_demo"])
+        self.assertEqual(result["source"], "starter_kit/circuits/bell.qasm")
+        self.assertEqual(result["validation_stage"], "fidelity")
+        self.assertGreaterEqual(result["fidelity"], 0.97)
+        self.assertEqual(set(result["probabilities"]), {"00", "11"})
+        self.assertAlmostEqual(result["probabilities"]["00"], 0.5)
+        self.assertAlmostEqual(result["probabilities"]["11"], 0.5)
+        self.assertEqual(ModelHandler.payloads, [])
+
+    def test_offline_demo_http_endpoint_does_not_require_model_config(self):
+        ui_server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=ui_server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with mock.patch.dict(os.environ, {}, clear=True):
+                connection = HTTPConnection("127.0.0.1", ui_server.server_port)
+                body = json.dumps({"language": "zh"}).encode()
+                connection.request(
+                    "POST",
+                    "/api/demo",
+                    body=body,
+                    headers={"Content-Type": "application/json"},
+                )
+                response = connection.getresponse()
+                result = json.loads(response.read())
+                connection.close()
+            self.assertEqual(response.status, 200)
+            self.assertTrue(result["ok"])
+            self.assertTrue(result["offline_demo"])
+            self.assertEqual(ModelHandler.payloads, [])
+        finally:
+            ui_server.shutdown()
+            ui_server.server_close()
+            thread.join(timeout=2)
+
     def test_landing_page_routes_only_ctas_to_the_existing_builder(self):
         ui_source = UI_PATH.read_text(encoding="utf-8")
 
@@ -1146,9 +1198,11 @@ class L2AgentTests(unittest.TestCase):
         self.assertNotIn('id="app-view" class="app-view" hidden', ui_source)
         self.assertIn('expandBuilder(true)', ui_source)
         self.assertIn('expandBuilder(false, true)', ui_source)
-        self.assertIn('$("prompt").value = "做一个贝尔态"', ui_source)
+        self.assertIn('build("/api/demo")', ui_source)
+        self.assertIn('async function build(endpoint="/api/build")', ui_source)
+        self.assertIn("no language model was called", ui_source)
         self.assertIn('history.pushState({}, "", route)', ui_source)
-        self.assertIn('$("go").addEventListener("click", build)', ui_source)
+        self.assertIn('$("go").addEventListener("click", () => build())', ui_source)
         self.assertNotIn('$("app-view").addEventListener', ui_source)
         self.assertNotIn('class="preview-window"', ui_source)
         self.assertNotIn("产品能力", ui_source)
