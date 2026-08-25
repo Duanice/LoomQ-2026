@@ -161,6 +161,26 @@ start_container() {
   fi
 }
 
+wait_for_http() {
+  local attempt
+  printf '等待 Web 页面就绪'
+  for ((attempt=1; attempt<=30; attempt++)); do
+    if docker exec "$CONTAINER_ID" python -c \
+      'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8000/", timeout=1).read(1)' \
+      >/dev/null 2>&1; then
+      printf ' 已就绪。\n'
+      return
+    fi
+    if [[ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID" 2>/dev/null || true)" != "true" ]]; then
+      docker logs "$CONTAINER_ID" 2>&1 || true
+      fail "Web 容器在启动过程中退出。"
+    fi
+    printf '.'
+    sleep 1
+  done
+  fail "Web 页面在 30 秒内没有就绪。"
+}
+
 REQUESTED_PORT="$PORT"
 LAST_PORT=$((REQUESTED_PORT + 99))
 ((LAST_PORT <= 65535)) || LAST_PORT=65535
@@ -181,6 +201,7 @@ done
 
 trap cleanup EXIT
 trap 'exit 130' INT TERM
+wait_for_http
 if [[ "$PORT" != "$REQUESTED_PORT" ]]; then
   printf '端口 %s 已被占用，自动改用 %s。\n' "$REQUESTED_PORT" "$PORT"
 fi

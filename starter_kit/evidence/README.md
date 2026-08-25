@@ -73,9 +73,10 @@ evidence/files/spinq-screenshot.png
 已有内容可以直接引用主 README 或其他项目文档，不必复制到本目录。
 
 ```text
-干净环境中的构建和启动命令：宿主机只需 Docker，不需要 Python；从 fork 根目录执行 ./starter_kit/run_demo.sh。脚本会按系统给出缺失 Docker 的官方安装指引，在 macOS 自动唤起已安装但未运行的 Docker Desktop，自动选择可用端口、构建 Linux/amd64 镜像并启动 Web 产品。若只提取 starter_kit/，则在评测根目录执行 ./run_demo.sh
+干净环境中的构建和启动命令：宿主机只需 Docker，不需要 Python；从 fork 根目录执行 ./starter_kit/run_demo.sh。脚本会按系统给出缺失 Docker 的官方安装指引，在 macOS 自动唤起已安装但未运行的 Docker Desktop，自动选择可用端口、构建 Linux/amd64 镜像、等待 HTTP 服务就绪并启动 Web 产品。若只提取 starter_kit/，则在评测根目录执行 ./run_demo.sh
 架构说明：starter_kit/README.md 的“统一 L1 架构”“L3 Hybrid-QASM 编译器”和“L2 统一模型与环境变量”章节；L2 的模型、确定性校验和多任务执行边界详见 starter_kit/L2_DESIGN.md
 目标用户和使用场景：没有量子计算背景、希望用自然语言学习概念、生成或修复量子电路、查看模拟结果并确定性选择后端的初学者与开发者
+必答用户故事：过去，一名没有量子计算背景的学生即使听说过“纠缠”，也会被 OpenQASM 语法、量子门、Python 环境和三家平台 SDK 挡在第一步，只能看概念文章，无法亲手得到一个可运行结果。现在，他可以直接打开 LoomQ Web 界面，用一句大白话描述目标；系统会生成电路、在本地模拟器运行并校验，再把电路图、00/11 等概率结果、QASM 和每一步的白话解释放在同一页面。即使没有模型 Key，他也能通过入门教程和离线 Bell Demo 第一次走完“看懂需求 → 看到电路 → 运行 → 读懂结果”的完整量子计算闭环。
 完整使用流程：未配置 LOOMQ_LLM_* 也可运行一键脚本、阅读入门教程并点击 LAUNCH DEMO 体验公开 Bell 电路的真实本地解析、模拟和保真度校验；该固定演示明确标注未调用大模型，不作为 L2 Agent 能力证据。配置 LOOMQ_LLM_* 后，“开始构建”使用与 agent_chat 相同的模型、路由和验证链路；用户可依次查看电路图、运行结果、QASM 与白话解释，“文件”菜单可恢复本机最近对话或导出 QASM，“帮助”菜单可随时打开入门教程
 ```
 

@@ -15,7 +15,7 @@ QASM 和逐步解释。
 ./starter_kit/run_demo.sh
 ```
 
-脚本会构建 Linux/amd64 镜像、自动选择端口、启动 Web 界面并尝试打开浏览器。
+脚本会构建 Linux/amd64 镜像、自动选择端口、等待 HTTP 服务就绪，再打开浏览器。
 默认地址为 <http://127.0.0.1:8000>；也可用 `LOOMQ_PORT` 指定起始端口。若组委会
 只提取了 `starter_kit/`，则在该目录执行 `./run_demo.sh` 即可。
 

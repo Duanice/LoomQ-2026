@@ -1451,7 +1451,7 @@ function expandBuilder(runDemo=false, focusPrompt=false, updateRoute=true){
   }
   window.scrollTo({top:0, behavior:"smooth"});
   if(runDemo){
-    $("prompt").value = LANG === "en" ? "Offline Bell-state demo" : "离线 Bell 态示例";
+    $("prompt").value = LANG === "en" ? "Offline Bell-state demo" : "Bell 态示例";
     build("/api/demo");
   }else if(focusPrompt){
     $("prompt").focus();
