@@ -31,7 +31,7 @@ body{
 .out,.in{border:2px solid var(--y2k-ink)}
 
 /* Landing page: two honest entry points into the same builder workflow. */
-.landing{max-width:1180px; margin:0 auto}
+.landing{width:min(82vw,1050px); max-width:none; margin:0 auto; zoom:1.125}
 .landing-header{
   display:flex; align-items:center; justify-content:space-between; gap:16px; padding:13px 16px;
   border:2px solid var(--y2k-ink); border-radius:7px; background:#fff;
@@ -47,9 +47,13 @@ body{
   border-radius:5px; background:var(--y2k-mint); font:700 12px/1 ui-monospace,monospace;
 }
 .ready::before{content:""; width:9px; height:9px; border:1px solid var(--y2k-ink); border-radius:50%; background:#1bbf8b}
-.landing-grid{display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:22px; margin-top:28px}
+.landing-grid{
+  display:grid; min-height:760px; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  gap:22px; margin-top:28px
+}
 .hero-window{
-  overflow:hidden; border:2px solid var(--y2k-ink); border-radius:8px; background:#fff;
+  display:flex; overflow:hidden; flex-direction:column;
+  border:2px solid var(--y2k-ink); border-radius:8px; background:#fff;
   box-shadow:7px 7px 0 var(--y2k-ink);
 }
 .landing-titlebar{
@@ -61,7 +65,7 @@ body{
 .title-dots i{display:block; width:18px; height:18px; border:2px solid var(--y2k-ink); border-radius:3px; background:var(--y2k-pink)}
 .title-dots i:nth-child(2){background:var(--y2k-lemon)}
 .title-dots i:nth-child(3){background:var(--y2k-mint)}
-.hero-copy{display:flex; min-height:520px; flex-direction:column; justify-content:center; padding:44px 34px}
+.hero-copy{display:flex; min-height:520px; flex:1; flex-direction:column; justify-content:center; padding:44px 34px}
 .eyebrow{margin:0 0 18px; color:#7858d5; font-size:12px; font-weight:800; letter-spacing:.09em}
 .hero-copy h1{max-width:470px; margin:0; font-size:clamp(42px,5vw,66px); line-height:1.08; letter-spacing:-.06em}
 .hero-copy>p:not(.eyebrow):not(.microcopy){margin:24px 0 0; color:var(--y2k-ink-muted); font-size:17px; line-height:1.75}
@@ -70,11 +74,14 @@ body{
 #launch-demo{background:var(--y2k-blue)}
 #get-started{background:var(--y2k-pink)}
 .microcopy{margin:15px 0 0!important; font-size:12px!important; font-weight:600}
-.app-view{min-width:0; padding-bottom:8px}
-.app-view .window{max-width:none; margin:0}
-.landing.builder-mode{max-width:860px}
+.app-view{min-width:0; height:100%; padding-bottom:8px}
+.app-view .window{display:flex; height:100%; max-width:none; margin:0; flex-direction:column}
+.app-view .body{display:flex; min-height:0; flex:1; flex-direction:column}
+.app-view .panel{flex:1}
+.landing.builder-mode{width:min(82vw,760px); max-width:none}
 .landing.builder-mode .landing-header,.landing.builder-mode .hero-window{display:none}
 .landing.builder-mode .landing-grid{display:block; margin-top:0}
+.landing.builder-mode .app-view .window{min-height:760px}
 
 .window{
   max-width:860px; margin:0 auto; padding:0; overflow:hidden; background:#fff;
@@ -167,10 +174,13 @@ body{
   background:rgba(27,27,58,.42);
 }
 .tutorial{
-  width:min(760px,100%); border:2px solid var(--y2k-ink); border-radius:8px;
+  width:min(840px,100%); border:2px solid var(--y2k-ink); border-radius:8px;
   max-height:calc(100vh - 64px); display:flex; flex-direction:column;
-  overflow:hidden; transform:translateY(-3vh);
+  overflow:hidden; transform:translateY(-8vh);
   background:#fff; box-shadow:7px 7px 0 var(--y2k-ink);
+}
+@media (min-width:1600px){
+  .tutorial{width:min(920px,65vw); max-height:72vh; zoom:1.15}
 }
 .tutorial-bar{
   display:flex; align-items:center; gap:10px; padding:9px 12px;
@@ -225,7 +235,7 @@ body{
   .tutorial-body{padding:15px}
   .coin{flex-direction:column; gap:10px}
 }
-@media (max-height:640px){.tutorial{transform:none}}
+@media (max-height:640px){.tutorial{max-height:calc(100vh - 36px); transform:none; zoom:1}}
 
 fieldset{
   margin:0 0 14px; padding:13px; border:2px solid var(--y2k-ink);
@@ -427,17 +437,21 @@ button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px
 
 @media (max-width:640px){
   body{padding:10px; background-size:18px 18px}
+  .landing,.landing.builder-mode{width:auto; zoom:1}
   .landing-header{padding:10px 11px; box-shadow:4px 4px 0 var(--y2k-ink)}
   .brand{font-size:20px}
   .brand-mark{width:30px; height:30px}
   .ready{font-size:10px}
-  .landing-grid{grid-template-columns:1fr; gap:17px; margin-top:18px}
+  .landing-grid{min-height:0; grid-template-columns:1fr; gap:17px; margin-top:18px}
   .hero-window{box-shadow:4px 4px 0 var(--y2k-ink)}
   .hero-copy{min-height:auto; padding:34px 22px}
   .hero-copy h1{font-size:42px}
   .hero-actions{flex-direction:column}
   .body{padding:11px}
   .window{box-shadow:4px 4px 0 var(--y2k-ink)}
+  .app-view,.app-view .window{height:auto}
+  .app-view .body{display:block}
+  .landing.builder-mode .app-view .window{min-height:0}
   .titlebar{padding:8px}
   .titlebar .t{font-size:13px}
   .tbtn{width:18px; height:18px}
