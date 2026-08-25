@@ -1,0 +1,23 @@
+{
+  "backend": "originq_wukong",
+  "job_id": "F016831B161D5F48125A7DAAA50DB335",
+  "shots": 1024,
+  "counts": {
+    "00": 414,
+    "01": 0,
+    "10": 25,
+    "11": 585
+  },
+  "bit_order": "little",
+  "timestamp": "2026-08-10T05:56:39.299326Z",
+  "meta": {
+    "is_mock": false,
+    "platform": "WK_C180",
+    "sdk_version": "0.4.0",
+    "main_peaks": [
+      "11",
+      "00"
+    ],
+    "main_peak_hit": true
+  }
+}

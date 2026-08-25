@@ -1,0 +1,23 @@
+{
+  "backend": "spinq_cloud_qpu",
+  "job_id": "G-260810-0005",
+  "shots": 1024,
+  "counts": {
+    "00": 585,
+    "01": 107,
+    "10": 7,
+    "11": 325
+  },
+  "bit_order": "little",
+  "timestamp": "2026-08-10T06:51:08.443204Z",
+  "meta": {
+    "is_mock": false,
+    "platform": "gemini_vp",
+    "sdk_version": "0.2.4",
+    "main_peaks": [
+      "00",
+      "11"
+    ],
+    "main_peak_hit": true
+  }
+}

@@ -1,0 +1,38 @@
+[project]
+name = "loomq-2026"
+version = "1.1.0"
+description = "LoomQ · 量子接入平权计划：赛题发布包与选手工具包"
+readme = "README.md"
+# spinqit 最高只提供 cp310 wheel，与官方基础镜像 python:3.10-slim 保持一致。
+requires-python = ">=3.10,<3.11"
+
+# 公开 evaluator 与提交工具只使用 Python 标准库，核心不引入第三方依赖。
+dependencies = []
+
+[project.optional-dependencies]
+# 各量子平台 SDK 互相独立，按需安装：uv sync --extra braket
+braket = ["amazon-braket-sdk==1.110.1"]
+spinq = ["spinqit==0.2.4"]
+originq = ["pyqpanda==3.8.5"]
+# 本源云真机走 pyqpanda3（与本地模拟器的 pyqpanda 是两个不同的包）。
+originq-cloud = ["pyqpanda3==0.4.0"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+default-groups = ["dev"]
+
+# spinqit 钉死 antlr4-python3-runtime==4.9.2，而 amazon-braket-default-simulator
+# 需要 ==4.13.2，两者无法共存于同一环境。声明为互斥后 uv 会在 lock 中分别求解，
+# 安装时二选一：uv sync --extra braket 或 uv sync --extra spinq。
+conflicts = [
+    [{ extra = "braket" }, { extra = "spinq" }],
+]
+
+[tool.setuptools]
+packages = ["competition"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

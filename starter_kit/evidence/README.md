@@ -8,24 +8,38 @@
 
 把要申报项目的方框改成 `[x]`，并填写对应内容：
 
-- [ ] L1 真机
-- [ ] L2 交互体验
-- [ ] 工程与产品化
-- [ ] 自定义量子 RISC-V Bonus
-- [ ] 新手引导与视觉叙事 Bonus
+- [x] L1 真机
+- [x] L2 交互体验
+- [x] 工程与产品化
+- [x] 自定义量子 RISC-V Bonus
+- [x] 新手引导与视觉叙事 Bonus
 
 ## L1 真机
 
 每个有效真机平台计 5 分，最多两个平台。模拟器不计真机分。每个平台复制并填写一次下面的信息：
 
 ```text
-平台名称：[填写]
-平台 job ID：[填写]
-运行时间：[填写，带时区]
-shots：[填写]
-实际执行的 QASM：[填写仓库内路径]
-平台返回的原始结果：[填写仓库内路径]
-任务页截图：[选填，填写仓库内路径]
+平台名称：量旋云 2Qubit 核磁量子计算机（gemini_vp）
+平台 job ID：G-260810-0005
+运行时间：2026-08-10T06:51:08.443204Z
+shots：1024
+实际执行的 QASM：starter_kit/circuits/bell.qasm
+平台返回的原始结果：starter_kit/evidence/files/spinq-raw-result.json
+统一结果：starter_kit/evidence/files/spinq-result.json
+提交回执：starter_kit/evidence/files/spinq-submission.json
+SDK 查询截图：starter_kit/evidence/files/spinq-sdk-task-G-260810-0005.png
+```
+
+```text
+平台名称：本源量子云悟空真机（WK_C180）
+平台 job ID：F016831B161D5F48125A7DAAA50DB335
+运行时间：2026-08-10T05:56:39.299326Z
+shots：1024
+实际执行的 QASM：starter_kit/circuits/bell.qasm
+平台返回的原始结果：starter_kit/evidence/files/originq-raw-result.json
+统一结果：starter_kit/evidence/files/originq-result.json
+提交回执：starter_kit/evidence/files/originq-submission.json
+任务页截图：starter_kit/evidence/files/originq-task-F016831B161D5F48125A7DAAA50DB335.png
 ```
 
 建议把文件放进 `evidence/files/`，比如：
@@ -43,13 +57,13 @@ evidence/files/spinq-screenshot.png
 请填写：
 
 ```text
-启动界面或 CLI 的命令：[填写]
-测试入口或页面地址：[填写，没有则写“无”]
-适合现场体验的 3 个用户任务：
-1. [填写]
-2. [填写]
-3. [填写]
-截图或演示视频：[选填，填写仓库内路径或稳定只读链接]
+启动界面或 CLI 的命令：python3 -m starter_kit.agent.server --open
+测试入口或页面地址：http://127.0.0.1:8000
+用于交互体验评测的 3 个用户任务：
+1. 让三个量子比特纠缠在一起，并解释测量结果。
+2. 我想制备贝尔态，请修复：H q[0]; CX q[0] q[1]
+3. 我要运行 15 比特电路，不想排队且不要账号，应该选择哪个平台？
+截图或演示视频：无（选填）；工作人员可直接运行上述入口
 ```
 
 工作人员会在组委会统一模型环境中运行最终代码，测试新手是否看得懂、出错后能否得到有效帮助、结果是否清楚，以及多轮回答是否一致。选手自己的对话截图只用于说明产品流程，不直接证明得分。
@@ -59,10 +73,11 @@ evidence/files/spinq-screenshot.png
 已有内容可以直接引用主 README 或其他项目文档，不必复制到本目录。
 
 ```text
-干净环境中的构建和启动命令：[填写命令或文档路径]
-架构说明：[填写文档路径，或用几句话说明主要模块]
-目标用户和使用场景：[填写]
-完整使用流程：[填写文档、截图或演示路径]
+干净环境中的构建和启动命令：宿主机只需 Docker，不需要 Python；从 fork 根目录执行 ./starter_kit/run_demo.sh。脚本会按系统给出缺失 Docker 的官方安装指引，在 macOS 自动唤起已安装但未运行的 Docker Desktop，自动选择可用端口、构建 Linux/amd64 镜像、等待 HTTP 服务就绪并启动 Web 产品。若只提取 starter_kit/，则在评测根目录执行 ./run_demo.sh
+架构说明：starter_kit/README.md 的“统一 L1 架构”“L3 Hybrid-QASM 编译器”和“L2 统一模型与环境变量”章节；L2 的模型、确定性校验和多任务执行边界详见 starter_kit/L2_DESIGN.md
+目标用户和使用场景：没有量子计算背景、希望用自然语言学习概念、生成或修复量子电路、查看模拟结果并确定性选择后端的初学者与开发者
+必答用户故事：过去，一名没有量子计算背景的学生即使听说过“纠缠”，也会被 OpenQASM 语法、量子门、Python 环境和三家平台 SDK 挡在第一步，只能看概念文章，无法亲手得到一个可运行结果。现在，他可以直接打开 LoomQ Web 界面，用一句大白话描述目标；系统会生成电路、在本地模拟器运行并校验，再把电路图、00/11 等概率结果、QASM 和每一步的白话解释放在同一页面。即使没有模型 Key，他也能通过入门教程和离线 Bell Demo 第一次走完“看懂需求 → 看到电路 → 运行 → 读懂结果”的完整量子计算闭环。
+完整使用流程：未配置 LOOMQ_LLM_* 也可运行一键脚本、阅读入门教程并点击 LAUNCH DEMO 体验公开 Bell 电路的真实本地解析、模拟和保真度校验；该固定演示明确标注未调用大模型，不作为 L2 Agent 能力证据。配置 LOOMQ_LLM_* 后，“开始构建”使用与 agent_chat 相同的模型、路由和验证链路；用户可依次查看电路图、运行结果、QASM 与白话解释，“文件”菜单可恢复本机最近对话或导出 QASM，“帮助”菜单可随时打开入门教程
 ```
 
 工作人员会按最终 commit 实际构建和启动，并检查文档与代码是否一致、产品是否真的降低了量子计算的使用门槛。
@@ -72,9 +87,10 @@ evidence/files/spinq-screenshot.png
 以下三项必须齐全且测试通过，才获得 8 分：
 
 ```text
-指令编码规格：[填写文档路径]
-模拟器扩展实现：[填写代码路径]
-端到端测试命令：[填写命令或文档路径]
+指令编码规格：starter_kit/QUANTUM_RISCV_SPEC.md
+模拟器扩展实现：starter_kit/riscv_emulator.py（custom-0 机器字编码、解码、状态向量门执行、测量坍缩及经典寄存器写回）
+端到端测试（从 fork 根目录运行）：python3 -m unittest starter_kit.test_quantum_riscv -v
+端到端测试（从提取后的 starter_kit 评测根目录运行）：python3 -m unittest test_quantum_riscv -v
 ```
 
 ## 新手引导与视觉叙事 Bonus
@@ -82,10 +98,10 @@ evidence/files/spinq-screenshot.png
 请填写已有材料的路径，不要求为评分另写一套文档：
 
 ```text
-零基础首次运行指南：[填写]
-量子概念解释：[填写]
-结果可视化：[填写]
-错误恢复或无障碍引导：[填写]
+零基础首次运行指南：starter_kit/agent/ui.html 中“帮助 → 入门教程”的五步交互引导，以及 starter_kit/QUANTUM_101.md
+量子概念解释：starter_kit/agent/skills/explain-user-question/SKILL.md、starter_kit/agent/skills/explain-quantum-circuit/SKILL.md 与 starter_kit/agent/explainer.py
+结果可视化：starter_kit/agent/ui.html 中可切换的电路图、测量概率柱状图、QASM 和图文解释面板
+错误恢复或无障碍引导：starter_kit/agent/core.py 与 starter_kit/agent/verifier.py 会对解析、语法和目标测量语义做确定性自检并反馈重试；starter_kit/agent/ui.html 提供中英双语、键盘可达控件、错误提示和随时可重开的教程
 ```
 
 以上四项各 1 分。普通项目 README 完整不代表自动获得 Bonus。

@@ -74,6 +74,8 @@ class PublicL2ContractTests(unittest.TestCase):
                 "LOOMQ_LLM_API_KEY": "local-key",
                 "LOOMQ_LLM_MODEL": "local-model",
                 "LOOMQ_LLM_TIMEOUT_SECONDS": "2",
+                "NO_PROXY": "127.0.0.1,localhost",
+                "no_proxy": "127.0.0.1,localhost",
                 }
             with mock.patch.dict(os.environ, environment, clear=True):
                 response = load_client().chat_completion([{"role": "user", "content": "hello"}])

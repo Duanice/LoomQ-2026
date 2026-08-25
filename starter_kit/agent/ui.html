@@ -1,0 +1,1574 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LoomQ 量子助手</title>
+<style>
+/*
+ * Y2K UI manual adapter: the official palette and component geometry are
+ * mapped to this dependency-free page so the submission remains offline-safe.
+ * Source: https://github.com/MuhamadZafarSyah/y2k-ui (MIT)
+ */
+:root{
+  --y2k-ink:#1b1b3a; --y2k-ink-muted:#505266; --y2k-blue:#8ed1fc;
+  --y2k-pink:#ff8fcf; --y2k-lilac:#b69cff; --y2k-mint:#8ff0d0;
+  --y2k-lemon:#ffe45e; --y2k-panel:#d7dde8; --field:#ffffff;
+  --ok:#147a5c; --err:#b42345; --title2:var(--y2k-pink); --dk:var(--y2k-ink);
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+[hidden]{display:none!important}
+body{
+  margin:0; padding:22px; color:var(--y2k-ink); font-size:14px;
+  font-family:"Trebuchet MS",Tahoma,Geneva,Verdana,sans-serif;
+  background-color:#f6f4ff;
+  background-image:
+    linear-gradient(90deg,rgba(182,156,255,.16) 1px,transparent 1px),
+    linear-gradient(rgba(142,209,252,.18) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+.out,.in{border:2px solid var(--y2k-ink)}
+
+/* Landing page: two honest entry points into the same builder workflow. */
+.landing{width:min(82vw,1050px); max-width:none; margin:0 auto; zoom:1.125}
+.landing-header{
+  display:flex; align-items:center; justify-content:space-between; gap:16px; padding:13px 16px;
+  border:2px solid var(--y2k-ink); border-radius:7px; background:#fff;
+  box-shadow:5px 5px 0 var(--y2k-ink);
+}
+.brand{display:flex; align-items:center; gap:10px; font-size:24px; font-weight:800; letter-spacing:-.04em}
+.brand-mark{
+  display:grid; width:34px; height:34px; place-items:center; border:2px solid var(--y2k-ink);
+  border-radius:6px; background:var(--y2k-lilac); box-shadow:2px 2px 0 var(--y2k-ink);
+}
+.ready{
+  display:flex; align-items:center; gap:8px; padding:7px 10px; border:2px solid var(--y2k-ink);
+  border-radius:5px; background:var(--y2k-mint); font:700 12px/1 ui-monospace,monospace;
+}
+.ready::before{content:""; width:9px; height:9px; border:1px solid var(--y2k-ink); border-radius:50%; background:#1bbf8b}
+.landing-grid{
+  display:grid; min-height:760px; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  gap:22px; margin-top:28px
+}
+.hero-window{
+  display:flex; overflow:hidden; flex-direction:column;
+  border:2px solid var(--y2k-ink); border-radius:8px; background:#fff;
+  box-shadow:7px 7px 0 var(--y2k-ink);
+}
+.landing-titlebar{
+  display:flex; min-height:48px; align-items:center; justify-content:space-between; gap:12px;
+  padding:9px 12px; border-bottom:2px solid var(--y2k-ink); background:var(--y2k-lilac);
+  font:700 13px/1 ui-monospace,monospace;
+}
+.title-dots{display:flex; gap:6px}
+.title-dots i{display:block; width:18px; height:18px; border:2px solid var(--y2k-ink); border-radius:3px; background:var(--y2k-pink)}
+.title-dots i:nth-child(2){background:var(--y2k-lemon)}
+.title-dots i:nth-child(3){background:var(--y2k-mint)}
+.hero-copy{display:flex; min-height:520px; flex:1; flex-direction:column; justify-content:center; padding:44px 34px}
+.eyebrow{margin:0 0 18px; color:#7858d5; font-size:12px; font-weight:800; letter-spacing:.09em}
+.hero-copy h1{max-width:470px; margin:0; font-size:clamp(42px,5vw,66px); line-height:1.08; letter-spacing:-.06em}
+.hero-copy>p:not(.eyebrow):not(.microcopy){margin:24px 0 0; color:var(--y2k-ink-muted); font-size:17px; line-height:1.75}
+.hero-actions{display:flex; gap:12px; margin-top:34px}
+.hero-actions button{flex:1; min-height:52px; padding:10px 15px; font-weight:800}
+#launch-demo{background:var(--y2k-blue)}
+#get-started{background:var(--y2k-pink)}
+.microcopy{margin:15px 0 0!important; font-size:12px!important; font-weight:600}
+.app-view{min-width:0; height:100%; padding-bottom:8px}
+.app-view .window{display:flex; height:100%; max-width:none; margin:0; flex-direction:column}
+.app-view .body{display:flex; min-height:0; flex:1; flex-direction:column}
+.app-view .panel{flex:1}
+.landing.builder-mode{width:min(82vw,760px); max-width:none}
+.landing.builder-mode .landing-header,.landing.builder-mode .hero-window{display:none}
+.landing.builder-mode .landing-grid{display:block; margin-top:0}
+.landing.builder-mode .app-view .window{min-height:760px}
+
+.window{
+  max-width:860px; margin:0 auto; padding:0; overflow:hidden; background:#fff;
+  border-radius:8px; box-shadow:6px 6px 0 var(--y2k-ink);
+}
+.titlebar{
+  display:flex; align-items:center; gap:7px; padding:9px 11px; color:var(--y2k-ink);
+  background:var(--y2k-blue); border-bottom:2px solid var(--y2k-ink); font-weight:700;
+}
+.titlebar .t{flex:1; letter-spacing:.01em}
+.tbtn{
+  display:inline-flex; width:20px; height:20px; align-items:center; justify-content:center;
+  min-width:20px; padding:0; border-radius:3px; background:#fff; color:var(--y2k-ink);
+  font:700 11px/1 Tahoma,sans-serif;
+}
+.tbtn:nth-last-child(3){background:var(--y2k-lemon)}
+.tbtn:nth-last-child(2){background:var(--y2k-mint)}
+.tbtn:last-child{background:var(--y2k-pink)}
+.window:fullscreen,.window.window-maximized{
+  width:100vw; height:100vh; max-width:none; margin:0; border-radius:0;
+  overflow:auto; background:#fff; box-shadow:none;
+  font-size:clamp(16px,.62vw,18px);
+}
+.window.window-maximized{position:fixed; inset:0; z-index:50}
+.window:fullscreen :is(.titlebar,.menubar,.help-rail p,legend,label,textarea,input[type=text],button,.tab,.panel pre,.circuit-detail,.circuit-legend,.basis,.lesson-summary,.lesson-card p,.circuit-lesson-step p,.task-heading strong,.task-heading small,.hist .v,.status),
+.window.window-maximized :is(.titlebar,.menubar,.help-rail p,legend,label,textarea,input[type=text],button,.tab,.panel pre,.circuit-detail,.circuit-legend,.basis,.lesson-summary,.lesson-card p,.circuit-lesson-step p,.task-heading strong,.task-heading small,.hist .v,.status){font-size:1em}
+.window:fullscreen :is(.tbtn,.lang-toggle,.lesson-kicker,.term-chip,.task-heading span),
+.window.window-maximized :is(.tbtn,.lang-toggle,.lesson-kicker,.term-chip,.task-heading span){font-size:.78em}
+.menubar{
+  position:relative; display:flex; align-items:center; gap:16px; padding:7px 10px; background:var(--y2k-panel);
+  border-bottom:2px solid var(--y2k-ink); font-size:13px; font-weight:600;
+}
+.menubar>span,.menu-slot>span{padding:2px 9px; border-radius:3px}
+.menubar>span u,.menu-slot>span u{text-decoration:underline; text-underline-offset:2px}
+.menu-slot{position:relative}
+.menu-popup{
+  position:absolute; top:calc(100% + 8px); left:0; z-index:45; width:260px;
+  padding:5px; border:2px solid var(--y2k-ink); border-radius:5px;
+  background:#fff; box-shadow:4px 4px 0 var(--y2k-ink);
+}
+.menu-popup button{
+  display:flex; width:100%; min-width:0; align-items:center; gap:8px; padding:8px 9px;
+  border:0; border-radius:3px; background:transparent; box-shadow:none; text-align:left;
+}
+.menu-popup button:hover:not(:disabled){background:var(--y2k-lilac)}
+.menu-popup button:active:not(:disabled){transform:none}
+.menu-popup button:disabled{opacity:.42}
+.menu-popup .menu-check{width:16px; flex:0 0 16px; text-align:center}
+.menu-popup .menu-divider{height:2px; margin:5px; background:var(--y2k-panel)}
+.menu-popup .menu-heading{padding:6px 9px 3px; color:var(--y2k-ink-muted); font-size:11px}
+.recent-list{max-height:230px; overflow:auto}
+.recent-item{justify-content:space-between}
+.recent-item span:first-child{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.recent-item small{flex:0 0 auto; color:var(--y2k-ink-muted); font-size:10px}
+.recent-empty{margin:0; padding:8px 9px; color:var(--y2k-ink-muted); font-size:12px}
+.body{padding:16px; background:#fdfcff}
+
+/* 入门教程：帮助菜单里的零基础引导 */
+.menubar .menu-current{
+  border:2px solid var(--y2k-ink); border-radius:4px;
+  background:var(--y2k-lemon); box-shadow:2px 2px 0 var(--y2k-ink);
+}
+.menubar span[role=button]{cursor:pointer}
+.menubar span[role=button]:hover{background:var(--y2k-lilac)}
+.menubar span[role=button]:active{transform:translateY(1px)}
+/* 侧边入门引导按钮：让「不知道从哪开始」的用户一眼看到 */
+.help-rail{
+  display:flex; align-items:center; gap:9px; margin:0 0 13px; padding:10px 13px;
+  border:2px solid var(--y2k-ink); border-radius:7px; background:var(--y2k-mint);
+  box-shadow:3px 3px 0 var(--y2k-ink);
+}
+.help-rail .icon{
+  display:grid; width:26px; height:26px; flex:0 0 26px; place-items:center;
+  border:2px solid var(--y2k-ink); border-radius:50%; background:#fff; font-weight:800;
+}
+.help-rail p{flex:1; margin:0; font-size:13px; line-height:1.5}
+.help-rail button{min-width:0; padding:6px 13px; background:var(--y2k-lemon); font-weight:700}
+@media (max-width:640px){ .help-rail{flex-wrap:wrap} .help-rail p{flex:1 1 100%} }
+.menubar span[role=button]:focus-visible{outline:2px solid var(--y2k-ink); outline-offset:1px}
+.lang-toggle{
+  min-width:0; padding:3px 9px; margin-right:4px; border:2px solid var(--y2k-ink);
+  border-radius:4px; background:var(--y2k-lemon); font:700 11px/1.5 ui-monospace,monospace;
+  cursor:pointer;
+}
+.lang-toggle:hover{background:var(--y2k-mint)}
+.landing-header .lang-toggle{margin-right:8px}
+.tutorial-backdrop{
+  position:fixed; inset:0; z-index:50; display:flex; align-items:center;
+  justify-content:center; padding:clamp(18px,4vh,44px) 16px; overflow:auto;
+  background:rgba(27,27,58,.42);
+}
+.tutorial{
+  width:min(840px,100%); border:2px solid var(--y2k-ink); border-radius:8px;
+  max-height:calc(100vh - 64px); display:flex; flex-direction:column;
+  overflow:hidden; transform:translateY(-8vh);
+  background:#fff; box-shadow:7px 7px 0 var(--y2k-ink);
+}
+@media (min-width:1600px){
+  .tutorial{width:min(920px,65vw); max-height:72vh; zoom:1.15}
+}
+.tutorial-bar{
+  display:flex; align-items:center; gap:10px; padding:9px 12px;
+  border-bottom:2px solid var(--y2k-ink); background:var(--y2k-lilac);
+  font-weight:700; border-radius:5px 5px 0 0;
+}
+.tutorial-bar .t{flex:1}
+.tutorial-close{
+  min-width:0; width:26px; height:24px; padding:0; border:2px solid var(--y2k-ink);
+  border-radius:4px; background:var(--y2k-pink); font-weight:700; cursor:pointer;
+}
+.tutorial-body{padding:18px 20px 22px; overflow:auto}
+.tutorial-step{display:none}
+.tutorial-step.on{display:block}
+.tutorial-step h2{margin:0 0 4px; font-size:20px; letter-spacing:-.02em}
+.tutorial-lede{margin:0 0 14px; color:var(--y2k-ink-muted); font-size:13px}
+.tutorial-body p{margin:0 0 11px; line-height:1.75}
+.tutorial-body ul{margin:0 0 11px; padding-left:20px; line-height:1.75}
+.tutorial-body li{margin-bottom:5px}
+.tutorial-note{
+  margin:13px 0 0; padding:11px 13px; border:2px solid var(--y2k-ink);
+  border-radius:6px; background:rgba(255,228,94,.3); font-size:13px;
+}
+.tutorial-figure{
+  margin:13px 0; padding:13px; border:2px solid var(--y2k-ink); border-radius:6px;
+  background:rgba(142,209,252,.16); overflow-x:auto;
+}
+.tutorial-figure pre{
+  margin:0; font-family:ui-monospace,"Courier New",monospace; font-size:13px;
+  line-height:1.65; white-space:pre;
+}
+.coin{display:flex; gap:18px; flex-wrap:wrap; margin:13px 0}
+.coin-item{
+  flex:1; min-width:150px; padding:11px 13px; border:2px solid var(--y2k-ink);
+  border-radius:6px; background:#fff;
+}
+.coin-item b{display:block; margin-bottom:5px}
+.coin-item span{font-size:13px; color:var(--y2k-ink-muted)}
+.tutorial-foot{
+  display:flex; align-items:center; gap:10px; padding:13px 20px;
+  border-top:2px solid var(--y2k-ink); background:var(--y2k-panel);
+  border-radius:0 0 5px 5px;
+}
+.tutorial-dots{flex:1; display:flex; gap:6px}
+.tutorial-dots i{
+  width:9px; height:9px; border:2px solid var(--y2k-ink); border-radius:50%;
+  background:#fff;
+}
+.tutorial-dots i.on{background:var(--y2k-lilac)}
+.tutorial-foot button{min-width:92px; padding:7px 13px}
+@media (max-width:640px){
+  .tutorial-body{padding:15px}
+  .coin{flex-direction:column; gap:10px}
+}
+@media (max-height:640px){.tutorial{max-height:calc(100vh - 36px); transform:none; zoom:1}}
+
+fieldset{
+  margin:0 0 14px; padding:13px; border:2px solid var(--y2k-ink);
+  border-radius:7px; background:#fff; box-shadow:3px 3px 0 var(--y2k-panel);
+}
+legend{
+  padding:3px 8px; border:2px solid var(--y2k-ink); border-radius:5px;
+  background:var(--y2k-lemon); font-weight:700;
+}
+label{display:block; margin:2px 0 8px; font-weight:600}
+
+textarea,input[type=text]{
+  width:100%; padding:10px 11px; color:var(--y2k-ink); background:var(--field);
+  border:2px solid var(--y2k-ink); border-radius:5px; outline:none; resize:vertical;
+  font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace;
+  transition:box-shadow .15s ease,background .15s ease;
+}
+textarea{min-height:84px}
+textarea::placeholder,input[type=text]::placeholder{color:var(--y2k-ink-muted); opacity:.7}
+textarea:focus-visible,input[type=text]:focus-visible{box-shadow:0 0 0 3px rgba(255,143,207,.55)}
+
+.row{display:flex; gap:9px; flex-wrap:wrap; margin-top:10px; align-items:center}
+button{
+  min-width:96px; padding:8px 14px; color:var(--y2k-ink); background:var(--y2k-lemon);
+  border:2px solid var(--y2k-ink); border-radius:6px; cursor:pointer; user-select:none;
+  font:600 14px/1.2 inherit; transition:transform .1s ease,background .15s ease;
+}
+#demo{background:var(--y2k-blue)}
+.ex{background:var(--y2k-pink)}
+.ex:nth-child(2n){background:var(--y2k-mint)}
+button:hover:not(:disabled){background:var(--y2k-lilac)}
+button:active:not(:disabled){transform:translateY(2px) scale(.98)}
+button:disabled{opacity:.48; cursor:not-allowed}
+button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px}
+
+.progress{
+  display:none; height:22px; padding:3px; overflow:hidden; background:#fff;
+  border-radius:5px;
+}
+.progress.on{display:block}
+.bar{display:flex; height:100%; gap:3px; overflow:hidden}
+.bar i{
+  width:13px; flex:0 0 13px; border:1px solid var(--y2k-ink); border-radius:2px;
+  background:var(--y2k-blue); animation:blink 1s steps(1) infinite;
+}
+.bar i:nth-child(2n){background:var(--y2k-pink)}
+@keyframes blink{50%{opacity:.35}}
+
+.steps{margin:11px 0 0; padding:0; list-style:none}
+.steps li{padding:3px 0; font-weight:600}
+.steps li.ok::before{content:"\2713 "; color:var(--ok); font-weight:800}
+.steps li.err::before{content:"\2717 "; color:var(--err); font-weight:800}
+.steps li.run::before{content:"\00bb "; color:var(--y2k-lilac); font-weight:800}
+
+/* Y2K UI tabs: a shared ink baseline with pastel triggers and a white panel. */
+.tabs{
+  display:flex; align-items:flex-end; gap:4px; margin-top:16px;
+  border-bottom:2px solid var(--y2k-ink);
+}
+.tab{
+  margin-bottom:-2px; padding:7px 12px; color:var(--y2k-ink); background:var(--y2k-panel);
+  border:2px solid var(--y2k-ink); border-bottom:0; border-radius:5px 5px 0 0;
+  cursor:pointer; font-size:13px; font-weight:700; transition:background .15s ease;
+}
+.tab:hover{background:var(--y2k-lilac)}
+.tab:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px}
+.tab[aria-selected=true]{position:relative; z-index:1; padding-bottom:9px; background:var(--y2k-lemon)}
+.panel{
+  min-height:260px; padding:13px; overflow:auto; color:var(--y2k-ink); background:#fff;
+  border-top:0; border-radius:0 0 6px 6px;
+}
+.panel pre{
+  margin:0; white-space:pre; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace;
+}
+
+/* 结构化 SVG 电路图：只换 Y2K UI 视觉令牌，量子门语义和交互保持不变。 */
+.circuit-scroll{min-width:max-content}
+.circuit-svg{display:block; width:auto; min-width:100%; height:auto; color:var(--y2k-ink); background:#fff}
+.circuit-svg text{font-family:Tahoma,Geneva,Verdana,sans-serif; fill:var(--y2k-ink); user-select:none}
+.circuit-svg .wire,.circuit-svg .connector{stroke:var(--y2k-ink); stroke-width:2; fill:none}
+.circuit-svg .connector{stroke-width:2.5}
+.circuit-svg .box{fill:#fff; stroke:var(--y2k-ink); stroke-width:2}
+.circuit-svg .control,.circuit-svg .target{fill:var(--y2k-ink); stroke:var(--y2k-ink); stroke-width:2}
+.circuit-svg .target{fill:#fff}
+.circuit-svg .target-line{stroke:var(--y2k-ink); stroke-width:2}
+.circuit-svg .swap-line{stroke:var(--y2k-ink); stroke-width:3}
+.circuit-svg .gate{cursor:pointer}
+.circuit-svg .gate:hover .box,.circuit-svg .gate:focus .box,
+.circuit-svg .gate.selected .box{fill:var(--y2k-lemon); stroke:var(--y2k-pink); stroke-width:3}
+.circuit-svg .gate:hover .control,.circuit-svg .gate:focus .control,
+.circuit-svg .gate.selected .control{fill:var(--y2k-pink); stroke:var(--y2k-ink)}
+.circuit-svg .gate:focus{outline:none}
+.circuit-svg .step{font-size:11px; fill:var(--y2k-ink-muted); text-anchor:middle}
+.circuit-svg .qlabel{font:13px ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace; text-anchor:end}
+.circuit-svg .clabel{font:12px ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace}
+.circuit-svg .gate-label{font-size:14px; font-weight:bold; text-anchor:middle; dominant-baseline:middle}
+.circuit-svg .param{font:10px ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace; text-anchor:middle}
+.circuit-svg .measure-title{font-size:11px; fill:var(--y2k-ink-muted); text-anchor:middle}
+.circuit-svg .meter{stroke:var(--y2k-ink); stroke-width:1.7; fill:none}
+.circuit-detail,.basis{
+  margin-top:9px; padding:8px 10px; border:2px solid var(--y2k-ink); border-radius:5px;
+  background:rgba(143,240,208,.28);
+}
+.circuit-detail{min-height:34px;white-space:pre-line}
+.circuit-legend{margin-top:7px; color:var(--y2k-ink-muted); font-size:12px}
+.basis{margin-top:12px; background:rgba(255,228,94,.35); font-size:12px}
+
+/* 模型只返回受校验的数据；这些组件负责安全地把数据画成教学卡片。 */
+.lesson{display:grid; gap:13px; max-width:920px}
+.lesson-head{
+  padding:15px 17px; border:2px solid var(--y2k-ink); border-radius:7px;
+  background:linear-gradient(135deg,rgba(142,209,252,.5),rgba(179,151,255,.32));
+  box-shadow:4px 4px 0 var(--y2k-ink);
+}
+.lesson-kicker{font:800 10px/1 ui-monospace,monospace; letter-spacing:.11em; color:#6547c7}
+.lesson h2{margin:7px 0 5px; font-size:22px; line-height:1.2}
+.lesson-summary{margin:0; font-size:14px; line-height:1.65}
+.lesson-visual{
+  margin:0; padding:13px; border:2px solid var(--y2k-ink); border-radius:7px;
+  background:rgba(255,228,94,.2);
+}
+.visual-track{display:flex; align-items:stretch; gap:28px; overflow-x:auto; padding:4px 2px 7px}
+.visual-node{
+  position:relative; min-width:125px; flex:1; padding:10px; text-align:center;
+  border:2px solid var(--y2k-ink); border-radius:6px; background:#fff;
+  box-shadow:3px 3px 0 var(--y2k-ink);
+}
+.visual-node:nth-child(2n){background:rgba(255,143,207,.3)}
+.visual-node strong{display:block; margin-bottom:5px; font-size:13px}
+.visual-node span{display:block; color:var(--y2k-ink-muted); font-size:11px; line-height:1.45}
+.visual-flow .visual-node:not(:last-child)::after{
+  content:"→"; position:absolute; z-index:2; right:-23px; top:50%;
+  transform:translateY(-50%); font-size:21px; font-weight:900;
+}
+.visual-compare .visual-node:first-child{background:rgba(142,209,252,.35)}
+.visual-compare .visual-node:last-child{background:rgba(143,240,208,.35)}
+.visual-relation{align-items:center; gap:12px}
+.visual-relation .visual-node:first-child{background:rgba(142,209,252,.35)}
+.visual-relation .visual-node:last-child{background:rgba(255,143,207,.26)}
+.visual-link{
+  min-width:120px; padding:7px 9px; text-align:center; border:2px solid var(--y2k-ink);
+  border-radius:999px; background:var(--y2k-lemon); font-size:11px; font-weight:800;
+}
+.visual-link::before,.visual-link::after{content:"—"; margin:0 4px}
+.lesson-visual figcaption{margin-top:7px; color:var(--y2k-ink-muted); font-size:11px; text-align:center}
+.lesson-cards{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+.lesson-card{
+  min-height:110px; padding:12px; border:2px solid var(--y2k-ink); border-radius:6px;
+  background:#fff; box-shadow:3px 3px 0 var(--y2k-panel);
+}
+.lesson-card:nth-child(2){background:rgba(142,209,252,.22)}
+.lesson-card:nth-child(3){background:rgba(143,240,208,.22)}
+.lesson-card:nth-child(4){background:rgba(255,143,207,.2)}
+.lesson-card h3{margin:0 0 7px; font-size:14px}
+.lesson-card p{margin:0; color:var(--y2k-ink-muted); font-size:12px; line-height:1.6}
+.lesson-icon{display:inline-grid; width:23px; height:23px; margin-right:6px; place-items:center;
+  border:2px solid var(--y2k-ink); border-radius:50%; background:var(--y2k-lemon); font-size:11px}
+.lesson-takeaway{padding:10px 12px; border:2px solid var(--y2k-ink); border-radius:6px; background:var(--y2k-mint)}
+.circuit-lesson-steps{display:grid; gap:8px}
+.circuit-lesson-step{display:grid; grid-template-columns:31px 1fr; gap:9px; align-items:start;
+  padding:10px; border:2px solid var(--y2k-ink); border-radius:6px; background:#fff}
+.step-number{display:grid; width:29px; height:29px; place-items:center; border:2px solid var(--y2k-ink);
+  border-radius:50%; background:var(--y2k-lemon); font-weight:800}
+.circuit-lesson-step p{margin:0 0 4px; line-height:1.55}
+.term-chip{display:inline-block; margin:3px 4px 0 0; padding:2px 6px; border:1px solid var(--y2k-ink);
+  border-radius:999px; background:rgba(179,151,255,.22); font-size:10px}
+.task-block{display:grid; gap:10px; margin-bottom:16px}
+.task-block:last-child{margin-bottom:0}
+.task-heading{display:flex; align-items:center; gap:9px; padding:9px 11px; border:2px solid var(--y2k-ink);
+  border-radius:6px; background:var(--y2k-lemon)}
+.task-heading span{padding:3px 7px; border:2px solid var(--y2k-ink); border-radius:999px; background:#fff;
+  font-size:10px; font-weight:900}
+.task-heading strong{font-size:15px}
+.task-heading small{margin-left:auto; color:var(--y2k-ink-muted); font-weight:700}
+
+/* 结果柱状图 */
+.hist{display:flex; align-items:flex-end; gap:10px; height:130px; padding-top:6px}
+.hist .col{display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%}
+.hist .b{width:38px; min-height:2px; background:var(--y2k-blue); border:2px solid var(--y2k-ink); border-radius:3px 3px 0 0}
+.hist .col:nth-child(2n) .b{background:var(--y2k-pink)}
+.hist .k{margin-top:4px; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace}
+.hist .v{font-size:11px; color:var(--y2k-ink-muted)}
+
+.status{display:flex; gap:8px; margin-top:12px; padding:0}
+.status .cell{padding:6px 9px; border-radius:5px; background:var(--y2k-panel)}
+.status .cell:first-child{flex:1; background:rgba(142,209,252,.45)}
+.muted{color:var(--y2k-ink-muted)}
+.err-text{color:var(--err)}
+.hint{
+  margin:10px 0 0; padding:10px; background:rgba(255,143,207,.18);
+  border:2px solid var(--y2k-ink); border-radius:6px;
+}
+
+::-webkit-scrollbar{width:14px; height:14px}
+::-webkit-scrollbar-track{background:#fff; border:2px solid var(--y2k-ink); border-radius:4px}
+::-webkit-scrollbar-thumb{background:var(--y2k-blue); border:2px solid var(--y2k-ink); border-radius:4px; min-height:28px}
+::-webkit-scrollbar-thumb:hover{background:var(--y2k-pink)}
+::-webkit-scrollbar-corner{background:#fff}
+
+@media (max-width:640px){
+  body{padding:10px; background-size:18px 18px}
+  .landing,.landing.builder-mode{width:auto; zoom:1}
+  .landing-header{padding:10px 11px; box-shadow:4px 4px 0 var(--y2k-ink)}
+  .brand{font-size:20px}
+  .brand-mark{width:30px; height:30px}
+  .ready{font-size:10px}
+  .landing-grid{min-height:0; grid-template-columns:1fr; gap:17px; margin-top:18px}
+  .hero-window{box-shadow:4px 4px 0 var(--y2k-ink)}
+  .hero-copy{min-height:auto; padding:34px 22px}
+  .hero-copy h1{font-size:42px}
+  .hero-actions{flex-direction:column}
+  .body{padding:11px}
+  .window{box-shadow:4px 4px 0 var(--y2k-ink)}
+  .app-view,.app-view .window{height:auto}
+  .app-view .body{display:block}
+  .landing.builder-mode .app-view .window{min-height:0}
+  .titlebar{padding:8px}
+  .titlebar .t{font-size:13px}
+  .tbtn{width:18px; height:18px}
+  .menubar{gap:7px; flex-wrap:wrap; overflow:visible}
+  .tab{padding:7px 8px; font-size:12px}
+  .status{flex-direction:column}
+  .lesson-cards{grid-template-columns:1fr}
+  .visual-track{gap:24px}
+  .visual-node{min-width:115px}
+  .task-heading{align-items:flex-start; flex-wrap:wrap}
+  .task-heading small{width:100%; margin-left:0}
+}
+</style>
+</head>
+<body>
+<main id="landing" class="landing">
+  <header class="landing-header">
+    <div class="brand"><span class="brand-mark">L</span><span>LoomQ</span></div>
+    <button id="lang-toggle-2" class="lang-toggle" title="Switch language">EN</button>
+      <span class="ready" data-i18n="ready">LOCAL UI READY</span>
+  </header>
+
+  <div class="landing-grid">
+    <section class="hero-window" aria-labelledby="hero-title">
+      <div class="landing-titlebar">
+        <span class="title-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow" data-i18n="eyebrow">QUANTUM ACCESSIBILITY FOR EVERYONE</p>
+        <h1 id="hero-title">用一句话，<br>造一条量子电路</h1>
+        <p>从自然语言到跨平台运行结果，LoomQ 自动完成解析、生成、执行与验证。</p>
+        <div class="hero-actions">
+          <button id="launch-demo" data-i18n="launchDemo">▶ LAUNCH DEMO</button>
+          <button id="get-started" data-i18n="getStarted">GET STARTED →</button>
+        </div>
+        <p class="microcopy" data-i18n="microcopy">无需量子基础 · 点击 GET STARTED 开始构建</p>
+      </div>
+    </section>
+
+    <div id="app-view" class="app-view">
+<div class="window out">
+  <div class="titlebar">
+    <span class="t" data-i18n="winTitle">LoomQ 量子助手 — 用大白话造量子电路</span>
+    <button id="lang-toggle" class="lang-toggle" title="Switch language">EN</button>
+    <button id="window-minimize" class="tbtn out" type="button" aria-label="返回首页">−</button>
+    <button id="window-maximize" class="tbtn out" type="button" aria-label="全屏展示" aria-pressed="false">□</button>
+    <button id="window-close" class="tbtn out" type="button" aria-label="返回首页">✕</button>
+  </div>
+  <div class="menubar">
+    <div class="menu-slot">
+      <span id="file-menu" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false" data-i18n="mFile"><u>文</u>件</span>
+      <div id="file-popup" class="menu-popup" role="menu" hidden>
+        <button id="new-conversation" type="button" role="menuitem" data-i18n="newConversation">新建对话</button>
+        <div class="menu-heading" data-i18n="recentLocal">最近对话 · 仅保存在本机</div>
+        <div id="recent-list" class="recent-list"></div>
+        <div class="menu-divider"></div>
+        <button id="export-qasm" type="button" role="menuitem" data-i18n="exportQasm">导出当前 QASM</button>
+        <button id="clear-recent" type="button" role="menuitem" data-i18n="clearRecent">清空最近记录</button>
+      </div>
+    </div>
+    <span class="menu-current" aria-current="page" data-i18n="mEdit"><u>编</u>辑</span>
+    <div class="menu-slot">
+      <span id="view-menu" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false" data-i18n="mView"><u>查</u>看</span>
+      <div id="view-popup" class="menu-popup" role="menu" hidden>
+        <button type="button" role="menuitem" data-view="circuit"><b class="menu-check"></b><span data-i18n="tabCircuit">电路图</span></button>
+        <button type="button" role="menuitem" data-view="result"><b class="menu-check"></b><span data-i18n="tabResult">运行结果</span></button>
+        <button type="button" role="menuitem" data-view="qasm"><b class="menu-check"></b><span>QASM</span></button>
+        <button type="button" role="menuitem" data-view="explain"><b class="menu-check"></b><span data-i18n="tabExplain">这是啥？</span></button>
+        <div class="menu-divider"></div>
+        <button id="view-fullscreen" type="button" role="menuitem"><b class="menu-check"></b><span></span></button>
+        <button id="toggle-tips" type="button" role="menuitem"><b class="menu-check"></b><span></span></button>
+      </div>
+    </div>
+    <span id="help-menu" role="button" tabindex="0" aria-haspopup="dialog" data-i18n="mHelp"><u>帮</u>助</span>
+  </div>
+
+  <div class="body">
+    <div id="help-rail" class="help-rail">
+      <span class="icon" aria-hidden="true">?</span>
+      <p data-i18n="railText">第一次接触量子计算？先看 3 分钟入门教程，再开始构建。</p>
+      <button id="open-tutorial" data-i18n="railBtn">入门教程</button>
+    </div>
+    <fieldset>
+      <legend>想做什么？</legend>
+      <label for="prompt">用大白话说就行，不需要懂量子：</label>
+      <textarea id="prompt" placeholder="例如：让三个量子比特纠缠在一起" data-i18n-ph="promptPh"></textarea>
+      <div class="row">
+        <button id="go" data-i18n="go">开始构建</button>
+        <button id="demo" data-i18n="demo">我不知道问些什么</button>
+        <span id="hintline" class="muted"></span>
+      </div>
+      <div id="examples" class="hint" hidden>
+        <strong>试试这些：</strong>
+        <div class="row">
+          <button class="ex" data-p="让三个量子比特纠缠在一起" data-p-en="entangle three qubits together" data-i18n="ex1">三比特纠缠</button>
+          <button class="ex" data-p="做一个贝尔态" data-p-en="make a Bell state" data-i18n="ex2">贝尔态</button>
+          <button class="ex" data-p="我要跑 15 比特的电路，而且不想排队，选哪个平台？" data-p-en="I need to run a 15-qubit circuit with no queue time, which platform should I use?" data-i18n="ex3">选平台</button>
+          <button class="ex" data-p="什么是量子纠缠？" data-p-en="What is quantum entanglement?" data-i18n="ex4">认识量子纠缠</button>
+        </div>
+      </div>
+    </fieldset>
+
+    <div id="progress" class="progress in"><div class="bar" id="bar"></div></div>
+    <ul id="steps" class="steps"></ul>
+
+    <div class="tabs" role="tablist">
+      <div class="tab out" role="tab" data-t="circuit" aria-selected="true" tabindex="0" data-i18n="tabCircuit">电路图</div>
+      <div class="tab out" role="tab" data-t="result"  aria-selected="false" tabindex="0" data-i18n="tabResult">运行结果</div>
+      <div class="tab out" role="tab" data-t="qasm"    aria-selected="false" tabindex="0">QASM</div>
+      <div class="tab out" role="tab" data-t="explain" aria-selected="false" tabindex="0" data-i18n="tabExplain">这是啥？</div>
+    </div>
+    <div class="panel in" id="panel"><span class="muted">还没有电路。上面说一句话，然后点「开始构建」。</span></div>
+
+    <div class="status">
+      <span class="cell in" id="status" data-i18n="ready2">就绪</span>
+      <span class="cell in" id="fid" data-i18n="fidNone">保真度 —</span>
+    </div>
+  </div>
+</div>
+</div>
+  </div>
+</main>
+
+
+<div id="tutorial" class="tutorial-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+  <div class="tutorial">
+    <div class="tutorial-bar">
+      <span class="t" id="tutorial-title" data-i18n="tutTitle">入门教程 · 从零看懂量子计算</span>
+      <button class="tutorial-close" id="tutorial-x" aria-label="关闭教程">✕</button>
+    </div>
+    <div class="tutorial-body">
+
+      <section class="tutorial-step on" data-step="0">
+        <h2>一、普通电脑是怎么算的？</h2>
+        <p class="tutorial-lede">先从你已经熟悉的东西说起。</p>
+        <p>你现在用的电脑，把所有信息都存成一长串 <b>0</b> 和 <b>1</b>。每一个 0 或 1 叫一个「比特」。照片、音乐、这段文字，最后都是 0 和 1。</p>
+        <p>关键在于：<b>一个普通比特，任何时刻只能是 0 或者 1，二选一</b>。就像一枚放在桌上的硬币，要么正面朝上，要么反面朝上。</p>
+        <div class="tutorial-note">如果要试遍 3 个比特的所有组合（000、001、010……111 共 8 种），普通电脑只能一种一种试，试 8 次。</div>
+      </section>
+
+      <section class="tutorial-step" data-step="1">
+        <h2>二、量子比特特别在哪？</h2>
+        <p class="tutorial-lede">一句话：它可以「同时是 0 和 1」。</p>
+        <p>想象把硬币<b>立起来快速旋转</b>。在它转的时候，你没法说它是正面还是反面——它处在两种可能的混合里。这种状态叫<b>叠加</b>。</p>
+        <div class="coin">
+          <div class="coin-item"><b>普通比特</b><span>桌上的硬币：不是正面，就是反面。</span></div>
+          <div class="coin-item"><b>量子比特</b><span>旋转中的硬币：两种可能同时存在，直到你伸手按住它。</span></div>
+        </div>
+        <p>「伸手按住」就是<b>测量</b>。一测量，旋转停止，你只会看到一个确定的 0 或 1，叠加就消失了。</p>
+        <p>所以 3 个量子比特可以同时承载 8 种组合。比特越多，这个数字翻倍得越快——50 个量子比特能同时表示的组合数，超过一千万亿种。</p>
+        <div class="tutorial-note">这就是量子计算被看好的原因：某些问题（药物分子模拟、材料设计、密码分析）用普通电脑要算几万年，量子计算机原理上快得多。</div>
+      </section>
+
+      <section class="tutorial-step" data-step="2">
+        <h2>三、还有一个关键：纠缠</h2>
+        <p class="tutorial-lede">两个量子比特可以「绑定」在一起。</p>
+        <p>把两枚旋转的硬币<b>纠缠</b>起来之后，它们会变成这样：你按住其中一枚看到正面，另一枚<b>必定</b>也是正面；你看到反面，另一枚必定也是反面。</p>
+        <p>但在你去看之前，谁也不知道会是哪一面——它们各自都是 50/50。神奇的是<b>关联性</b>：结果永远一致，从不出现一正一反。</p>
+        <div class="tutorial-figure"><pre>测 1000 次，三个纠缠的量子比特会得到：
+
+  000  ████████████████████  约 500 次
+  111  ████████████████████  约 500 次
+
+  001、010、101……  一次都不会出现</pre></div>
+        <p>你在这个工具里输入「让三个量子比特纠缠在一起」，看到的就是上面这张图。</p>
+      </section>
+
+      <section class="tutorial-step" data-step="3">
+        <h2>四、为什么要「写」量子程序？</h2>
+        <p class="tutorial-lede">因为量子计算机不会自己知道你想算什么。</p>
+        <p>量子比特本身只是一堆会旋转的硬币。要让它们算出有用的东西，你得<b>按顺序告诉它每一步做什么</b>：先让第 1 枚转起来，再把第 2 枚和它绑定……</p>
+        <p>这份「操作说明书」就是<b>量子程序</b>，也叫<b>量子电路</b>。它和菜谱很像：食材是量子比特，步骤是一个个<b>量子门</b>，最后<b>测量</b>就是尝一口看做成了什么。</p>
+        <ul>
+          <li><b>H 门</b>（阿达马门）——让一个量子比特开始「旋转」，进入叠加</li>
+          <li><b>CX 门</b>（受控非门）——把两个量子比特绑定起来，产生纠缠</li>
+          <li><b>测量</b>——按住硬币，读出最终的 0 或 1</li>
+        </ul>
+        <div class="tutorial-note">常用的门就十几个。你不需要背它们——这个工具会根据你的大白话自动挑选。</div>
+      </section>
+
+      <section class="tutorial-step" data-step="4">
+        <h2>五、量子程序长什么样？</h2>
+        <p class="tutorial-lede">下面这段就是完整的「三比特纠缠」程序。</p>
+        <div class="tutorial-figure"><pre>OPENQASM 2.0;          ← 用的是哪种语言
+include "qelib1.inc";  ← 载入标准门库
+qreg q[3];             ← 准备 3 个量子比特
+creg c[3];             ← 准备 3 个格子放测量结果
+h q[0];                ← 让第 1 个转起来（叠加）
+cx q[0],q[1];          ← 把第 2 个和第 1 个绑定（纠缠）
+cx q[0],q[2];          ← 把第 3 个也绑定进来
+measure q -> c;        ← 全部测量，结果存进格子</pre></div>
+        <p>这种写法叫 <b>OpenQASM</b>，是量子领域通用的「汇编语言」。八行，没有循环，没有函数，从上往下依次执行。</p>
+        <p><b>好消息是：你不用自己写。</b>在上面的输入框里说一句「让三个量子比特纠缠在一起」，助手会生成这段代码、跑一遍验证它是否正确，再把电路图和结果解释给你听。</p>
+        <div class="tutorial-note">建议现在就试试：关掉本教程，点「我不知道问些什么」看几个例子，随便挑一个点进去。</div>
+      </section>
+
+    </div>
+    <div class="tutorial-foot">
+      <span class="tutorial-dots" id="tutorial-dots" aria-hidden="true"></span>
+      <button id="tutorial-prev" data-i18n="prev">上一步</button>
+      <button id="tutorial-next" data-i18n="next">下一步</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+function emptyState(){
+  return {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:"", explanation:null, concept:null, tasks:null, circuits:null, validationStage:null, backend:null, basis:null};
+}
+let state = emptyState();
+let stepState = [];
+let currentConversationId = null;
+const HISTORY_KEY = "loomq-recent-v1";
+const HISTORY_LIMIT = 8;
+const TIPS_KEY = "loomq-hide-tips";
+
+function steps(items){
+  stepState = items.map(item => ({k:String(item.k), t:String(item.t)}));
+  $("steps").innerHTML = stepState.map(s => `<li class="${s.k}">${esc(s.t)}</li>`).join("");
+}
+function busy(on){
+  $("progress").classList.toggle("on", on);
+  $("bar").innerHTML = on ? "<i></i>".repeat(14) : "";
+  $("go").disabled = on;
+  $("status").textContent = on ? I18N[LANG].working : I18N[LANG].ready2;
+}
+function esc(s){ return String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function escAttr(s){ return esc(s).replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+
+const GATE_LABEL = {
+  h:"H", x:"X", s:"S", sdg:"S†", t:"T", tdg:"T†", ry:"Ry", rz:"Rz",
+  cx:"CNOT", cu1:"CU1", swap:"SWAP", ccx:"Toffoli"
+};
+
+function shortParam(value){
+  const text = String(value || "").replace(/\s+/g, "");
+  return text.length > 11 ? text.slice(0, 10) + "…" : text;
+}
+
+function operationText(explanation, index){
+  const step = explanation?.steps?.find(item => item.operation_id === `op_${index}`);
+  if(!step) return I18N[LANG].stepFallback.replace("%s", index + 1);
+  const terms = (step.terms || []).map(term => `${term.symbol}＝${term.meaning}`).join("；");
+  return `${I18N[LANG].stepWord} ${index + 1}: ${step.plain}\n${I18N[LANG].why}${step.purpose}`
+    + (terms ? `\n${I18N[LANG].termWord}${terms}` : "");
+}
+
+function targetMark(x, y){
+  return `<circle class="target" cx="${x}" cy="${y}" r="11"></circle>`
+    + `<line class="target-line" x1="${x-7}" y1="${y}" x2="${x+7}" y2="${y}"></line>`
+    + `<line class="target-line" x1="${x}" y1="${y-7}" x2="${x}" y2="${y+7}"></line>`;
+}
+
+function swapMark(x, y){
+  return `<line class="swap-line" x1="${x-8}" y1="${y-8}" x2="${x+8}" y2="${y+8}"></line>`
+    + `<line class="swap-line" x1="${x+8}" y1="${y-8}" x2="${x-8}" y2="${y+8}"></line>`;
+}
+
+function boxGate(x, y, label, parameter=""){
+  return `<rect class="box" x="${x-27}" y="${y-22}" width="54" height="44"></rect>`
+    + `<text class="gate-label" x="${x}" y="${parameter ? y-5 : y}">${esc(label)}</text>`
+    + (parameter ? `<text class="param" x="${x}" y="${y+13}">${esc(shortParam(parameter))}</text>` : "");
+}
+
+function circuitSvg(circuit, explanation){
+  const operations = circuit.operations || [];
+  const measurements = circuit.measurements || [];
+  const qubits = Math.max(1, circuit.qubit_count || 1);
+  const left = 126, top = 50, rowGap = 68, columnGap = 84;
+  const firstGateX = left + 56;
+  const measureX = firstGateX + operations.length * columnGap + 24;
+  const width = Math.max(720, measureX + 180);
+  const height = Math.max(190, top + (qubits - 1) * rowGap + 70);
+  const y = q => top + q * rowGap;
+  const parts = [
+    `<svg class="circuit-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${I18N[LANG].svgAria}">`,
+    `<defs><marker id="c-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#111"></path></marker></defs>`,
+    `<text class="measure-title" x="${measureX}" y="20">${I18N[LANG].readOut}</text>`
+  ];
+
+  for(let q=0; q<qubits; q++){
+    parts.push(`<text class="qlabel" x="${left-12}" y="${y(q)+5}">${I18N[LANG].qubitLabel} ${q+1}  q[${q}]</text>`);
+    parts.push(`<line class="wire" x1="${left}" y1="${y(q)}" x2="${width-88}" y2="${y(q)}"></line>`);
+  }
+
+  operations.forEach((op, index) => {
+    const x = firstGateX + index * columnGap;
+    const ys = op.qubits.map(y);
+    const title = operationText(explanation, index);
+    parts.push(`<g class="gate" data-detail="${escAttr(title)}" tabindex="0" role="button" aria-label="${escAttr(title)}"><title>${esc(title)}</title>`);
+    parts.push(`<text class="step" x="${x}" y="20">${index+1}</text>`);
+    if(op.name === "cx"){
+      parts.push(`<line class="connector" x1="${x}" y1="${Math.min(...ys)}" x2="${x}" y2="${Math.max(...ys)}"></line>`);
+      parts.push(`<circle class="control" cx="${x}" cy="${ys[0]}" r="6"></circle>`);
+      parts.push(targetMark(x, ys[1]));
+    }else if(op.name === "cu1"){
+      parts.push(`<line class="connector" x1="${x}" y1="${Math.min(...ys)}" x2="${x}" y2="${Math.max(...ys)}"></line>`);
+      parts.push(`<circle class="control" cx="${x}" cy="${ys[0]}" r="6"></circle>`);
+      parts.push(boxGate(x, ys[1], "U1", op.parameter));
+    }else if(op.name === "swap"){
+      parts.push(`<line class="connector" x1="${x}" y1="${Math.min(...ys)}" x2="${x}" y2="${Math.max(...ys)}"></line>`);
+      parts.push(swapMark(x, ys[0]), swapMark(x, ys[1]));
+    }else if(op.name === "ccx"){
+      parts.push(`<line class="connector" x1="${x}" y1="${Math.min(...ys)}" x2="${x}" y2="${Math.max(...ys)}"></line>`);
+      parts.push(`<circle class="control" cx="${x}" cy="${ys[0]}" r="6"></circle>`);
+      parts.push(`<circle class="control" cx="${x}" cy="${ys[1]}" r="6"></circle>`);
+      parts.push(targetMark(x, ys[2]));
+    }else{
+      parts.push(boxGate(x, ys[0], GATE_LABEL[op.name] || op.name.toUpperCase(), op.parameter));
+    }
+    parts.push(`</g>`);
+  });
+
+  measurements.forEach(m => {
+    const my = y(m.qubit);
+    parts.push(`<g aria-label="${I18N[LANG].measureAria} q${m.qubit} \u2192 c${m.cbit}">`);
+    parts.push(`<rect class="box" x="${measureX-22}" y="${my-19}" width="44" height="38"></rect>`);
+    parts.push(`<path class="meter" d="M ${measureX-12} ${my+9} A 13 13 0 0 1 ${measureX+12} ${my+9}"></path>`);
+    parts.push(`<line class="meter" x1="${measureX}" y1="${my+8}" x2="${measureX+10}" y2="${my-8}"></line>`);
+    parts.push(`<line class="wire" x1="${measureX+22}" y1="${my}" x2="${width-88}" y2="${my}" marker-end="url(#c-arrow)"></line>`);
+    parts.push(`<text class="clabel" x="${width-80}" y="${my+5}">${I18N[LANG].resultLabel} c[${m.cbit}]</text></g>`);
+  });
+
+  parts.push(`</svg>`);
+  return `<div class="circuit-scroll">${parts.join("")}</div>`
+    + `<div class="circuit-legend">${I18N[LANG].circuitLegend}</div>`
+    + `<div class="circuit-detail" aria-live="polite">${I18N[LANG].detailHint}</div>`;
+}
+
+function bindCircuit(panel){
+  panel.querySelectorAll(".gate").forEach(gate => {
+    const show = () => {
+      const block = gate.closest(".task-block") || panel;
+      block.querySelectorAll(".gate").forEach(item => item.classList.toggle("selected", item === gate));
+      block.querySelector(".circuit-detail").textContent = gate.dataset.detail;
+    };
+    gate.addEventListener("click", show);
+    gate.addEventListener("focus", show);
+    gate.addEventListener("keydown", event => {
+      if(event.key === "Enter" || event.key === " "){ event.preventDefault(); show(); }
+    });
+  });
+  panel.querySelectorAll(".task-block").forEach(block => {
+    const first = block.querySelector(".gate");
+    if(first){
+      first.classList.add("selected");
+      block.querySelector(".circuit-detail").textContent = first.dataset.detail;
+    }
+  });
+}
+
+function basisHtml(basis){
+  if(!basis) return "";
+  return `<div class="basis"><strong>${I18N[LANG].basis}</strong>${esc(basis.source)} ${esc(basis.version)}；${esc(basis.status)}。</div>`;
+}
+
+function histogram(probs){
+  const keys = Object.keys(probs).sort();
+  if(!keys.length) return '<span class="muted">没有结果。</span>';
+  const max = Math.max(...keys.map(k => probs[k]));
+  return '<div class="hist">' + keys.map(k => {
+    const h = Math.round((probs[k]/max) * 105) + 2;
+    return `<div class="col"><span class="v">${(probs[k]*100).toFixed(1)}%</span>`
+         + `<div class="b" style="height:${h}px"></div><span class="k">${esc(k)}</span></div>`;
+  }).join("") + "</div>";
+}
+
+const LESSON_ICONS = {definition:"◎", analogy:"≈", example:"▶", fact:"i", caution:"!", action:"→"};
+
+function conceptLessonHtml(lesson){
+  const visualType = ["compare", "relation"].includes(lesson.visual.type) ? lesson.visual.type : "flow";
+  const nodeList = lesson.visual.items.map(item =>
+    `<div class="visual-node"><strong>${esc(item.label)}</strong><span>${esc(item.detail)}</span></div>`
+  );
+  const nodes = visualType === "relation"
+    ? `${nodeList[0]}<div class="visual-link">${esc(lesson.visual.link)}</div>${nodeList[1]}`
+    : nodeList.join("");
+  const cards = lesson.cards.map(card =>
+    `<section class="lesson-card"><h3><span class="lesson-icon">${LESSON_ICONS[card.kind] || "·"}</span>${esc(card.title)}</h3>`
+    + `<p>${esc(card.body)}</p></section>`
+  ).join("");
+  return `<article class="lesson">`
+    + `<header class="lesson-head"><span class="lesson-kicker">VISUAL EXPLAINER</span>`
+    + `<h2>${esc(lesson.title)}</h2><p class="lesson-summary">${esc(lesson.summary)}</p></header>`
+    + `<figure class="lesson-visual" role="img" aria-label="${escAttr(lesson.visual.caption)}">`
+    + `<div class="visual-track visual-${visualType}">${nodes}</div>`
+    + `<figcaption>${esc(lesson.visual.caption)}</figcaption></figure>`
+    + `<div class="lesson-cards">${cards}</div>`
+    + `<div class="lesson-takeaway"><strong>${I18N[LANG].takeaway}</strong>${esc(lesson.takeaway)}</div>`
+    + `</article>`;
+}
+
+function circuitLessonHtml(lesson){
+  const stepCards = lesson.steps.map((step, index) => {
+    const terms = (step.terms || []).map(term =>
+      `<span class="term-chip"><strong>${esc(term.symbol)}</strong>：${esc(term.meaning)}</span>`
+    ).join("");
+    return `<section class="circuit-lesson-step"><span class="step-number">${index + 1}</span><div>`
+      + `<p><strong>${esc(step.plain)}</strong></p><p class="muted">${I18N[LANG].why}${esc(step.purpose)}</p>${terms}</div></section>`;
+  }).join("");
+  const result = lesson.result
+    ? `<section class="lesson-card"><h3><span class="lesson-icon">✓</span>${I18N[LANG].localCheck}</h3><p>${esc(lesson.result)}</p></section>`
+    : "";
+  return `<article class="lesson"><header class="lesson-head"><span class="lesson-kicker">CIRCUIT WALKTHROUGH</span>`
+    + `<h2>${I18N[LANG].whatDoes}</h2><p class="lesson-summary">${esc(lesson.overview)}</p></header>`
+    + `<div class="circuit-lesson-steps">${stepCards}</div><div class="lesson-cards">`
+    + `<section class="lesson-card"><h3><span class="lesson-icon">M</span>${I18N[LANG].howRead}</h3><p>${esc(lesson.measurement)}</p></section>`
+    + `${result}</div></article>`;
+}
+
+function plainAnswerHtml(text){
+  return `<article class="lesson"><header class="lesson-head"><span class="lesson-kicker">LOOMQ ANSWER</span>`
+    + `<p class="lesson-summary">${esc(text).replace(/\n/g,"<br>")}</p></header></article>`;
+}
+
+function hasCompoundGoals(){
+  return (state.tasks || []).length > 1 && state.tasks.some(task => task.kind === "circuit_build");
+}
+
+function taskNumber(kind){
+  const index = (state.tasks || []).findIndex(task => task.kind === kind);
+  return index < 0 ? 1 : index + 1;
+}
+
+function taskIdNumber(taskId){
+  const number = Number(String(taskId || "").split("_")[1]);
+  return Number.isFinite(number) ? number : 1;
+}
+
+function circuitItems(){
+  if(state.circuits?.length) return state.circuits;
+  if(!state.circuitData) return [];
+  return [{
+    task_id:`task_${taskNumber("circuit_build")}`,
+    request:I18N[LANG].genCircuit,
+    ok:true,
+    circuit:state.circuitData,
+    probabilities:state.result,
+    expected_probabilities:state.expected,
+    qasm:state.qasm,
+    explanation:state.explanation,
+    validation_stage:state.validationStage
+  }];
+}
+
+function taskBlockHtml(number, title, detail, body){
+  return `<section class="task-block"><header class="task-heading"><span>${I18N[LANG].task} ${number}</span>`
+    + `<strong>${esc(title)}</strong><small>${esc(detail)}</small></header>${body}</section>`;
+}
+
+function expectedResultText(expected=state.expected){
+  const entries = Object.entries(expected || {}).filter(([, value]) => value > 0);
+  if(!entries.length) return I18N[LANG].builtChecked;
+  return I18N[LANG].goal + entries.map(([key, value]) => `${key} ${(value * 100).toFixed(0)}%`).join(" · ");
+}
+
+function render(tab){
+  const p = $("panel");
+  if(tab === "circuit"){
+    const items = circuitItems();
+    if(items.length){
+      p.innerHTML = items.map(item => item.ok
+        ? taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].genCircuit, item.request, circuitSvg(item.circuit, item.explanation))
+        : taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].genFailed, item.request, `<p class="muted">${esc(item.message)}</p>`)
+      ).join("");
+      bindCircuit(p);
+    }
+    else if(state.diagram) p.innerHTML = `<pre>${esc(state.diagram)}</pre>`;
+    else p.innerHTML = `<span class="muted">${I18N[LANG].emptyCircuit}</span>`;
+  }
+  else if(tab === "result"){
+    const items = circuitItems();
+    p.innerHTML = items.length ? items.map(item => item.ok
+      ? taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].runResult, expectedResultText(item.expected_probabilities), histogram(item.probabilities))
+      : taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].runFailed, item.request, `<p class="muted">${esc(item.message)}</p>`)
+    ).join("") : `<span class="muted">${I18N[LANG].emptyResult}</span>`;
+  }
+  else if(tab === "qasm"){
+    const items = circuitItems();
+    p.innerHTML = items.length ? items.map(item => item.ok
+      ? taskBlockHtml(taskIdNumber(item.task_id), "QASM", item.request, `<pre>${esc(item.qasm)}</pre>`)
+      : taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].noQasm, item.request, `<p class="muted">${esc(item.message)}</p>`)
+    ).join("") : `<span class="muted">${I18N[LANG].emptyQasm}</span>`;
+  }
+  else if(state.concept && circuitItems().length && hasCompoundGoals()){
+    const knowledge = (state.tasks || []).find(task => task.kind !== "circuit_build" && task.kind !== "backend_select");
+    const knowledgeNumber = knowledge ? Number(knowledge.id.split("_")[1]) : 1;
+    p.innerHTML = taskBlockHtml(knowledgeNumber, I18N[LANG].understandQ, knowledge?.request || I18N[LANG].conceptMeaning, conceptLessonHtml(state.concept))
+      + circuitItems().map(item => item.ok && item.explanation
+        ? taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].genCircuit, item.request, circuitLessonHtml(item.explanation))
+        : taskBlockHtml(taskIdNumber(item.task_id), I18N[LANG].genFailed, item.request, `<p class="muted">${esc(item.message || I18N[LANG].noExplain)}</p>`)
+      ).join("");
+  }
+  else if(state.concept && !state.circuitData) p.innerHTML = conceptLessonHtml(state.concept);
+  else if(state.explanation) p.innerHTML = circuitLessonHtml(state.explanation);
+  else p.innerHTML = state.explain ? `${plainAnswerHtml(state.explain)}${basisHtml(state.basis)}`
+      : `<span class="muted">${I18N[LANG].emptyExplain}</span>`;
+}
+
+function activeTab(){
+  return document.querySelector('.tab[aria-selected="true"]')?.dataset.t || "circuit";
+}
+function selectTab(tab, remember=true){
+  document.querySelectorAll(".tab").forEach(x =>
+    x.setAttribute("aria-selected", String(x.dataset.t === tab)));
+  render(tab);
+  updateViewMenu();
+  if(remember) rememberConversationView(tab);
+}
+
+document.querySelectorAll(".tab").forEach(t => {
+  const pick = () => selectTab(t.dataset.t);
+  t.addEventListener("click", pick);
+  t.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); pick(); }});
+});
+
+$("demo").addEventListener("click", () => {
+  const box = $("examples");
+  box.hidden = !box.hidden;
+});
+document.querySelectorAll(".ex").forEach(b =>
+  b.addEventListener("click", () => {
+    $("prompt").value = (LANG === "en" && b.dataset.pEn) ? b.dataset.pEn : b.dataset.p;
+    $("examples").hidden = true; build();
+  }));
+
+$("prompt").addEventListener("keydown", e => {
+  if((e.ctrlKey || e.metaKey) && e.key === "Enter") build();
+});
+$("go").addEventListener("click", () => build());
+
+/* 中英切换：只翻译界面文案与教程，Agent 回答仍跟随你输入的语言。 */
+const I18N = {
+  en: {
+    ready: "LOCAL UI READY", eyebrow: "QUANTUM ACCESSIBILITY FOR EVERYONE",
+    launchDemo: "\u25b6 LAUNCH DEMO", getStarted: "GET STARTED \u2192",
+    microcopy: "No quantum background needed \u00b7 click GET STARTED to begin",
+    heroTitle: "One sentence,<br>build a quantum circuit",
+    heroLede: "From plain language to cross-platform results \u2014 LoomQ parses, generates, runs and verifies for you.",
+    winTitle: "LoomQ Quantum Assistant \u2014 build circuits in plain language",
+    mFile: "<u>F</u>ile", mEdit: "<u>E</u>dit", mView: "<u>V</u>iew", mHelp: "<u>H</u>elp",
+    legend: "What do you want to do?", promptLabel: "Just say it in plain words \u2014 no quantum knowledge needed:",
+    promptPh: "e.g. entangle three qubits together",
+    go: "Build it", demo: "I don't know what to ask",
+    exTitle: "<strong>Try one of these:</strong>",
+    ex1: "Three-qubit entanglement", ex2: "Bell state",
+    ex3: "Pick a platform", ex4: "What is entanglement?",
+    tabCircuit: "Circuit", tabResult: "Results", tabExplain: "What is this?",
+    ready2: "Ready", working: "Working\u2026", fidNone: "Fidelity \u2014", fid: "Fidelity",
+    emptyCircuit: "No circuit yet.", emptyResult: "No results yet.",
+    emptyQasm: "No QASM yet.",
+    emptyExplain: "Build a circuit and this tab will explain it in plain language.",
+    basis: "Source:", takeaway: "Just remember this:", why: "Why it's needed:",
+    localCheck: "Local verification", whatDoes: "What does this circuit do?",
+    howRead: "How to read the results", genCircuit: "Generate circuit",
+    genFailed: "Circuit generation failed", runResult: "Run results",
+    runFailed: "Run failed", noQasm: "QASM not generated",
+    understandQ: "Understand the question", conceptMeaning: "Concept & meaning",
+    noExplain: "Explanation not available", task: "Task", goal: "Goal:",
+    builtChecked: "Built and checked locally",
+    stepFallback: "Plain-language explanation for step %s is not available.",
+    sayFirst: "Tell me what you want first \u2014 e.g. \"entangle three qubits together\".",
+    understanding: "Understanding what you mean\u2026",
+    heard: "Got it:", diagramDone: "Diagram ready", answered: "Answered your question",
+    diagramNa: "Diagram unavailable, kept the basic answer",
+    pickPlatform: "Got it: you're choosing a platform",
+    filtered: "Filtered using the official backend capability table",
+    wantCircuit: "You want to build a quantum circuit",
+    understoodSep: "explained separately", taskGenRun: "circuit generated and run",
+    somePassed: "Some tasks failed the target-semantics self-check",
+    allPassed: "All circuits passed the target-semantics self-check",
+    syntaxOnly: "Circuits passed syntax checks; target semantics were not verified",
+    offlineDemo: "Loaded the verified offline Bell demo (no language model was called)",
+    circuitsPassed: "circuits passed",
+    svgAria: "quantum circuit diagram", readOut: "read out", qubitLabel: "qubit",
+    resultLabel: "result", measureAria: "measure", stepWord: "Step",
+    termWord: "Terms:",
+    circuitLegend: "<strong>How to read:</strong> each line is one qubit, operations run left to right; \u25cf is the control, \u2295 is the controlled flip, and the meter is the final read-out.",
+    detailHint: "Each step is explained in plain language below \u2014 no need to memorise the symbols first.", noServer: "Can't reach the local server \u2014 check it's still running in your terminal.",
+    railText: "New to quantum computing? Take the 3-minute tutorial first.",
+    railBtn: "Tutorial",
+    tutTitle: "Getting Started \u00b7 Quantum computing from zero",
+    prev: "Back", next: "Next", finish: "Start using it",
+    newConversation: "New conversation", recentLocal: "Recent · saved only on this device",
+    noRecent: "No recent conversations", exportQasm: "Export current QASM",
+    clearRecent: "Clear recent history", clearConfirm: "Clear all recent conversations on this device?",
+    now: "now", minutesAgo: "%s min ago", hoursAgo: "%s hr ago",
+    showTips: "Show beginner tips", hideTips: "Hide beginner tips",
+    windowHome: "Return to home", windowFullscreen: "Full screen", windowRestore: "Restore window",
+    langBtn: "\u4e2d\u6587",
+  },
+  zh: {
+    ready: "LOCAL UI READY", eyebrow: "QUANTUM ACCESSIBILITY FOR EVERYONE",
+    launchDemo: "\u25b6 LAUNCH DEMO", getStarted: "GET STARTED \u2192",
+    microcopy: "\u65e0\u9700\u91cf\u5b50\u57fa\u7840 \u00b7 \u70b9\u51fb GET STARTED \u5f00\u59cb\u6784\u5efa",
+    heroTitle: "\u7528\u4e00\u53e5\u8bdd\uff0c<br>\u9020\u4e00\u6761\u91cf\u5b50\u7535\u8def",
+    heroLede: "\u4ece\u81ea\u7136\u8bed\u8a00\u5230\u8de8\u5e73\u53f0\u8fd0\u884c\u7ed3\u679c\uff0cLoomQ \u81ea\u52a8\u5b8c\u6210\u89e3\u6790\u3001\u751f\u6210\u3001\u6267\u884c\u4e0e\u9a8c\u8bc1\u3002",
+    winTitle: "LoomQ \u91cf\u5b50\u52a9\u624b \u2014 \u7528\u5927\u767d\u8bdd\u9020\u91cf\u5b50\u7535\u8def",
+    mFile: "<u>\u6587</u>\u4ef6", mEdit: "<u>\u7f16</u>\u8f91", mView: "<u>\u67e5</u>\u770b", mHelp: "<u>\u5e2e</u>\u52a9",
+    legend: "\u60f3\u505a\u4ec0\u4e48\uff1f", promptLabel: "\u7528\u5927\u767d\u8bdd\u8bf4\u5c31\u884c\uff0c\u4e0d\u9700\u8981\u61c2\u91cf\u5b50\uff1a",
+    promptPh: "\u4f8b\u5982\uff1a\u8ba9\u4e09\u4e2a\u91cf\u5b50\u6bd4\u7279\u7ea0\u7f20\u5728\u4e00\u8d77",
+    go: "\u5f00\u59cb\u6784\u5efa", demo: "\u6211\u4e0d\u77e5\u9053\u95ee\u4e9b\u4ec0\u4e48",
+    exTitle: "<strong>\u8bd5\u8bd5\u8fd9\u4e9b\uff1a</strong>",
+    ex1: "\u4e09\u6bd4\u7279\u7ea0\u7f20", ex2: "\u8d1d\u5c14\u6001",
+    ex3: "\u9009\u5e73\u53f0", ex4: "\u8ba4\u8bc6\u91cf\u5b50\u7ea0\u7f20",
+    tabCircuit: "\u7535\u8def\u56fe", tabResult: "\u8fd0\u884c\u7ed3\u679c", tabExplain: "\u8fd9\u662f\u5565\uff1f",
+    ready2: "\u5c31\u7eea", working: "\u6b63\u5728\u5904\u7406\u2026", fidNone: "\u4fdd\u771f\u5ea6 \u2014", fid: "\u4fdd\u771f\u5ea6",
+    emptyCircuit: "\u8fd8\u6ca1\u6709\u7535\u8def\u3002", emptyResult: "\u8fd8\u6ca1\u6709\u8fd0\u884c\u7ed3\u679c\u3002",
+    emptyQasm: "\u8fd8\u6ca1\u6709 QASM\u3002",
+    emptyExplain: "\u6784\u5efa\u4e00\u4e2a\u7535\u8def\u540e\uff0c\u8fd9\u91cc\u4f1a\u7528\u5927\u767d\u8bdd\u89e3\u91ca\u5b83\u5728\u505a\u4ec0\u4e48\u3002",
+    basis: "\u4f9d\u636e\uff1a", takeaway: "\u53ea\u8bb0\u8fd9\u4e00\u53e5\uff1a", why: "\u4e3a\u4ec0\u4e48\u9700\u8981\uff1a",
+    localCheck: "\u672c\u5730\u9a8c\u8bc1\u7ed3\u679c", whatDoes: "\u8fd9\u6761\u7535\u8def\u5728\u505a\u4ec0\u4e48\uff1f",
+    howRead: "\u600e\u4e48\u8bfb\u7ed3\u679c", genCircuit: "\u751f\u6210\u7535\u8def",
+    genFailed: "\u751f\u6210\u7535\u8def\u5931\u8d25", runResult: "\u8fd0\u884c\u7ed3\u679c",
+    runFailed: "\u8fd0\u884c\u5931\u8d25", noQasm: "QASM \u672a\u751f\u6210",
+    understandQ: "\u7406\u89e3\u95ee\u9898", conceptMeaning: "\u6982\u5ff5\u4e0e\u542b\u4e49",
+    noExplain: "\u89e3\u91ca\u6682\u65f6\u4e0d\u53ef\u7528", task: "\u4efb\u52a1", goal: "\u76ee\u6807\uff1a",
+    builtChecked: "\u5df2\u751f\u6210\u5e76\u5b8c\u6210\u672c\u5730\u68c0\u67e5",
+    stepFallback: "\u7b2c %s \u6b65\u7684\u767d\u8bdd\u89e3\u91ca\u6682\u65f6\u4e0d\u53ef\u7528\u3002",
+    sayFirst: "\u5148\u8bf4\u4e00\u53e5\u4f60\u60f3\u505a\u4ec0\u4e48 \u2014\u2014 \u6bd4\u5982\u300c\u8ba9\u4e09\u4e2a\u91cf\u5b50\u6bd4\u7279\u7ea0\u7f20\u5728\u4e00\u8d77\u300d\u3002",
+    understanding: "\u6b63\u5728\u7406\u89e3\u4f60\u7684\u610f\u601d\u2026",
+    heard: "\u542c\u61c2\u4e86\uff1a", diagramDone: "\u5df2\u751f\u6210\u56fe\u89e3", answered: "\u5df2\u56de\u7b54\u4f60\u7684\u95ee\u9898",
+    diagramNa: "\u56fe\u89e3\u6682\u65f6\u4e0d\u53ef\u7528\uff0c\u5df2\u4fdd\u7559\u57fa\u7840\u56de\u7b54",
+    pickPlatform: "\u542c\u61c2\u4e86\uff1a\u4f60\u5728\u6311\u8fd0\u884c\u5e73\u53f0",
+    filtered: "\u5df2\u6309\u5b98\u65b9\u540e\u7aef\u80fd\u529b\u8868\u7b5b\u9009",
+    wantCircuit: "\u4f60\u60f3\u6784\u5efa\u4e00\u4e2a\u91cf\u5b50\u7535\u8def",
+    understoodSep: "\u7406\u89e3\u95ee\u9898\u5df2\u5355\u72ec\u89e3\u91ca", taskGenRun: "\u7535\u8def\u5df2\u751f\u6210\u5e76\u8fd0\u884c",
+    somePassed: "\u90e8\u5206\u4efb\u52a1\u672a\u901a\u8fc7\u76ee\u6807\u8bed\u4e49\u81ea\u68c0",
+    allPassed: "\u5168\u90e8\u7535\u8def\u5747\u901a\u8fc7\u76ee\u6807\u8bed\u4e49\u81ea\u68c0",
+    syntaxOnly: "\u7535\u8def\u5df2\u901a\u8fc7\u8bed\u6cd5\u68c0\u67e5\uff0c\u4f46\u672a\u9a8c\u8bc1\u76ee\u6807\u8bed\u4e49",
+    offlineDemo: "\u5df2\u8f7d\u5165\u7ecf\u9a8c\u8bc1\u7684\u79bb\u7ebf Bell \u793a\u4f8b\uff08\u672a\u8c03\u7528\u5927\u6a21\u578b\uff09",
+    circuitsPassed: "\u7535\u8def\u901a\u8fc7",
+    svgAria: "\u91cf\u5b50\u7535\u8def\u56fe", readOut: "\u6700\u540e\u8bfb\u53d6\u7ed3\u679c", qubitLabel: "\u4f4d", 
+    resultLabel: "\u7ed3\u679c", measureAria: "\u6d4b\u91cf", stepWord: "\u7b2c",
+    termWord: "\u672f\u8bed\uff1a",
+    circuitLegend: "<strong>\u600e\u4e48\u770b\uff1a</strong>\u6bcf\u6761\u6a2a\u7ebf\u662f\u4e00\u4f4d\u91cf\u5b50\u4fe1\u606f\uff0c\u64cd\u4f5c\u4ece\u5de6\u5f80\u53f3\u4f9d\u6b21\u6267\u884c\uff1b\u25cf \u662f\u201c\u6761\u4ef6\u5f00\u5173\u201d\uff0c\u2295 \u662f\u88ab\u63a7\u5236\u7684\u7ffb\u8f6c\uff0c\u4eea\u8868\u8868\u793a\u6700\u540e\u8bfb\u53d6\u7ed3\u679c\u3002",
+    detailHint: "\u4e0b\u9762\u4f1a\u7528\u767d\u8bdd\u89e3\u91ca\u5f53\u524d\u6b65\u9aa4\uff0c\u4e0d\u9700\u8981\u5148\u8bb0\u4f4f\u56fe\u91cc\u7684\u7b26\u53f7\u3002", noServer: "\u8fde\u4e0d\u4e0a\u672c\u5730\u670d\u52a1\uff0c\u8bf7\u786e\u8ba4\u7ec8\u7aef\u91cc\u7684\u670d\u52a1\u8fd8\u5728\u8fd0\u884c\u3002",
+    railText: "\u7b2c\u4e00\u6b21\u63a5\u89e6\u91cf\u5b50\u8ba1\u7b97\uff1f\u5148\u770b 3 \u5206\u949f\u5165\u95e8\u6559\u7a0b\uff0c\u518d\u5f00\u59cb\u6784\u5efa\u3002",
+    railBtn: "\u5165\u95e8\u6559\u7a0b",
+    tutTitle: "\u5165\u95e8\u6559\u7a0b \u00b7 \u4ece\u96f6\u770b\u61c2\u91cf\u5b50\u8ba1\u7b97",
+    prev: "\u4e0a\u4e00\u6b65", next: "\u4e0b\u4e00\u6b65", finish: "\u5f00\u59cb\u4f7f\u7528",
+    newConversation: "\u65b0\u5efa\u5bf9\u8bdd", recentLocal: "\u6700\u8fd1\u5bf9\u8bdd \u00b7 \u4ec5\u4fdd\u5b58\u5728\u672c\u673a",
+    noRecent: "\u8fd8\u6ca1\u6709\u6700\u8fd1\u5bf9\u8bdd", exportQasm: "\u5bfc\u51fa\u5f53\u524d QASM",
+    clearRecent: "\u6e05\u7a7a\u6700\u8fd1\u8bb0\u5f55", clearConfirm: "\u786e\u5b9a\u6e05\u7a7a\u672c\u673a\u7684\u5168\u90e8\u6700\u8fd1\u5bf9\u8bdd\uff1f",
+    now: "\u521a\u521a", minutesAgo: "%s \u5206\u949f\u524d", hoursAgo: "%s \u5c0f\u65f6\u524d",
+    showTips: "\u663e\u793a\u65b0\u624b\u63d0\u793a", hideTips: "\u9690\u85cf\u65b0\u624b\u63d0\u793a",
+    windowHome: "\u8fd4\u56de\u9996\u9875", windowFullscreen: "\u5168\u5c4f\u5c55\u793a", windowRestore: "\u6062\u590d\u7a97\u53e3",
+    langBtn: "EN",
+  },
+};
+
+const TUTORIAL_EN = [
+`<h2>1. How do ordinary computers work?</h2>
+<p class="tutorial-lede">Let's start with something you already know.</p>
+<p>The computer you're using stores everything as a long string of <b>0</b>s and <b>1</b>s. Each 0 or 1 is called a "bit". Photos, music, this very sentence — all of it is 0s and 1s underneath.</p>
+<p>Here's the key point: <b>an ordinary bit can only be 0 or 1 at any moment — one or the other</b>. Like a coin lying on a table: heads up, or tails up.</p>
+<div class="tutorial-note">To try every combination of 3 bits (000, 001, 010 … 111 — eight in total), an ordinary computer must try them one at a time: eight attempts.</div>`,
+`<h2>2. What makes a qubit different?</h2>
+<p class="tutorial-lede">In one sentence: it can be 0 and 1 at the same time.</p>
+<p>Picture that coin <b>spinning on its edge</b>. While it spins, you can't say it's heads or tails — it's a blend of both possibilities. This is called <b>superposition</b>.</p>
+<div class="coin">
+  <div class="coin-item"><b>Ordinary bit</b><span>A coin on the table: either heads, or tails.</span></div>
+  <div class="coin-item"><b>Qubit</b><span>A spinning coin: both possibilities at once, until you slap your hand down on it.</span></div>
+</div>
+<p>Slapping your hand down is <b>measurement</b>. The spinning stops, you see one definite 0 or 1, and the superposition is gone.</p>
+<p>So 3 qubits can hold all 8 combinations at once. The more qubits, the faster this doubles — 50 qubits can represent over a quadrillion combinations simultaneously.</p>
+<div class="tutorial-note">That's why quantum computing matters: some problems (drug molecule simulation, materials design, cryptanalysis) would take an ordinary computer millennia, but are far faster in principle on a quantum machine.</div>`,
+`<h2>3. The other key idea: entanglement</h2>
+<p class="tutorial-lede">Two qubits can be "tied together".</p>
+<p>Once you <b>entangle</b> two spinning coins, this happens: if you stop one and see heads, the other is <b>guaranteed</b> to be heads too. Tails, and the other is certainly tails.</p>
+<p>But before you look, nobody knows which it will be — each is still 50/50. The magic is the <b>correlation</b>: the results always match, and you never get one heads with one tails.</p>
+<div class="tutorial-figure"><pre>Measure 1000 times, three entangled qubits give:
+
+  000  ████████████████████  about 500 times
+  111  ████████████████████  about 500 times
+
+  001, 010, 101 …  never appear at all</pre></div>
+<p>Type "entangle three qubits together" into this tool and the chart above is exactly what you'll see.</p>`,
+`<h2>4. Why do you have to "write" a quantum program?</h2>
+<p class="tutorial-lede">Because the machine has no idea what you want to compute.</p>
+<p>Qubits by themselves are just a pile of spinnable coins. To make them compute something useful, you must <b>tell them what to do, step by step</b>: spin the first one, tie the second to it, and so on.</p>
+<p>That set of instructions is a <b>quantum program</b>, also called a <b>quantum circuit</b>. It's much like a recipe: the ingredients are qubits, the steps are <b>quantum gates</b>, and the final <b>measurement</b> is tasting what you made.</p>
+<ul>
+  <li><b>H gate</b> (Hadamard) — start a qubit "spinning", putting it into superposition</li>
+  <li><b>CX gate</b> (controlled-NOT) — tie two qubits together, creating entanglement</li>
+  <li><b>Measure</b> — stop the coin and read out the final 0 or 1</li>
+</ul>
+<div class="tutorial-note">There are only a dozen or so gates in common use. You don't need to memorise them — this tool picks them for you from your plain-language description.</div>`,
+`<h2>5. What does a quantum program look like?</h2>
+<p class="tutorial-lede">Below is the complete "three-qubit entanglement" program.</p>
+<div class="tutorial-figure"><pre>OPENQASM 2.0;          ← which language this is
+include "qelib1.inc";  ← load the standard gate library
+qreg q[3];             ← prepare 3 qubits
+creg c[3];             ← prepare 3 slots for the results
+h q[0];                ← spin up the 1st one (superposition)
+cx q[0],q[1];          ← tie the 2nd to the 1st (entanglement)
+cx q[0],q[2];          ← tie the 3rd in as well
+measure q -> c;        ← measure everything into the slots</pre></div>
+<p>This notation is called <b>OpenQASM</b>, the common "assembly language" of quantum computing. Eight lines, no loops, no functions — it runs top to bottom.</p>
+<p><b>The good news: you don't have to write it yourself.</b> Type "entangle three qubits together" in the box above and the assistant will generate this code, run it to check it's correct, then explain the circuit and results to you.</p>
+<div class="tutorial-note">Try it now: close this tutorial, click "I don't know what to ask" to see some examples, and pick any one.</div>`,
+];
+
+let LANG = localStorage.getItem("loomq-lang") || "zh";
+const TUTORIAL_ZH = [];
+
+function applyLanguage(){
+  const t = I18N[LANG];
+  document.documentElement.lang = LANG === "en" ? "en" : "zh-CN";
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const v = t[el.dataset.i18n];
+    if(v !== undefined) el.innerHTML = v;
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+    const v = t[el.dataset.i18nPh];
+    if(v !== undefined) el.placeholder = v;
+  });
+  const h1 = document.querySelector(".hero-copy h1");
+  if(h1) h1.innerHTML = t.heroTitle;
+  const lede = document.querySelector(".hero-copy > p:not(.eyebrow):not(.microcopy)");
+  if(lede) lede.innerHTML = t.heroLede;
+  const lg = document.querySelector("#examples legend, fieldset legend");
+  if(lg) lg.textContent = t.legend;
+  const pl = document.querySelector('label[for="prompt"]');
+  if(pl) pl.textContent = t.promptLabel;
+  const exHead = document.querySelector("#examples > strong, #examples strong");
+  if(exHead) exHead.textContent = t.exTitle.replace(/<[^>]+>/g, "");
+  // tutorial body
+  const steps = [...document.querySelectorAll(".tutorial-step")];
+  if(!TUTORIAL_ZH.length) steps.forEach(s => TUTORIAL_ZH.push(s.innerHTML));
+  steps.forEach((s, i) => {
+    const src = LANG === "en" ? TUTORIAL_EN[i] : TUTORIAL_ZH[i];
+    if(src) s.innerHTML = src;
+  });
+  [...document.querySelectorAll(".lang-toggle")].forEach(b => b.textContent = t.langBtn);
+  if(typeof window.__tutorialRefresh === "function") window.__tutorialRefresh();
+  // 重绘当前面板，让空状态文案跟随语言切换。
+  const active = document.querySelector('.tab[aria-selected="true"]');
+  if(active && typeof render === "function") render(active.dataset.t);
+  renderRecentMenu();
+  updateViewMenu();
+}
+
+function toggleLanguage(){
+  LANG = LANG === "zh" ? "en" : "zh";
+  localStorage.setItem("loomq-lang", LANG);
+  applyLanguage();
+  updateWindowControls();
+  rememberConversationView(activeTab());
+}
+
+/* 入门教程：五步引导，键盘可达，Esc 关闭 */
+(function(){
+  const modal = $("tutorial");
+  const steps = [...modal.querySelectorAll(".tutorial-step")];
+  const dots = $("tutorial-dots");
+  const prev = $("tutorial-prev");
+  const next = $("tutorial-next");
+  let at = 0, lastFocus = null;
+
+  dots.innerHTML = steps.map(() => "<i></i>").join("");
+  const marks = [...dots.querySelectorAll("i")];
+
+  function show(index){
+    at = Math.max(0, Math.min(steps.length - 1, index));
+    steps.forEach((s, i) => s.classList.toggle("on", i === at));
+    marks.forEach((m, i) => m.classList.toggle("on", i === at));
+    prev.disabled = at === 0;
+    next.textContent = at === steps.length - 1 ? I18N[LANG].finish : I18N[LANG].next;
+    modal.querySelector(".tutorial-body").scrollTop = 0;
+  }
+
+  function open(){
+    lastFocus = document.activeElement;
+    modal.hidden = false;
+    show(0);
+    next.focus();
+  }
+
+  function close(){
+    modal.hidden = true;
+    if(lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  window.__tutorialRefresh = () => show(at);
+  $("help-menu").addEventListener("click", open);
+  const rail = $("open-tutorial");
+  if(rail) rail.addEventListener("click", open);
+  $("help-menu").addEventListener("keydown", e => {
+    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); open(); }
+  });
+  $("tutorial-x").addEventListener("click", close);
+  prev.addEventListener("click", () => show(at - 1));
+  next.addEventListener("click", () => {
+    if(at === steps.length - 1){ close(); expandBuilder(false, true); }
+    else show(at + 1);
+  });
+  // 点遮罩关闭，但点内容区不关。
+  modal.addEventListener("click", e => { if(e.target === modal) close(); });
+  document.addEventListener("keydown", e => {
+    if(modal.hidden) return;
+    if(e.key === "Escape"){ close(); }
+    else if(e.key === "ArrowRight" && at < steps.length - 1){ show(at + 1); }
+    else if(e.key === "ArrowLeft" && at > 0){ show(at - 1); }
+  });
+})();
+
+[...document.querySelectorAll(".lang-toggle")].forEach(b =>
+  b.addEventListener("click", toggleLanguage));
+
+const appWindow = document.querySelector("#app-view .window");
+const maximizeButton = $("window-maximize");
+function windowIsFullscreen(){
+  return document.fullscreenElement === appWindow || appWindow.classList.contains("window-maximized");
+}
+function updateWindowControls(){
+  const t = I18N[LANG];
+  const fullscreen = windowIsFullscreen();
+  for(const id of ["window-minimize", "window-close"]){
+    $(id).title = $(id).ariaLabel = t.windowHome;
+  }
+  maximizeButton.title = maximizeButton.ariaLabel = fullscreen ? t.windowRestore : t.windowFullscreen;
+  maximizeButton.setAttribute("aria-pressed", String(fullscreen));
+  maximizeButton.textContent = fullscreen ? "❐" : "□";
+  updateViewMenu();
+}
+function returnHome(){ location.assign("/"); }
+async function toggleWindowFullscreen(){
+  try{
+    if(document.fullscreenElement === appWindow) await document.exitFullscreen();
+    else if(appWindow.requestFullscreen) await appWindow.requestFullscreen();
+    else appWindow.classList.toggle("window-maximized");
+  }catch(_error){
+    appWindow.classList.toggle("window-maximized");
+  }
+  updateWindowControls();
+}
+$("window-minimize").addEventListener("click", returnHome);
+$("window-close").addEventListener("click", returnHome);
+maximizeButton.addEventListener("click", toggleWindowFullscreen);
+document.addEventListener("fullscreenchange", updateWindowControls);
+
+function readHistory(){
+  try{
+    const items = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+    return Array.isArray(items) ? items : [];
+  }catch(_error){ return []; }
+}
+function writeHistory(items){
+  try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, HISTORY_LIMIT))); }
+  catch(_error){ /* 本地存储不可用时不影响 Agent 主流程。 */ }
+}
+function relativeTime(timestamp){
+  const minutes = Math.max(0, Math.floor((Date.now() - Number(timestamp)) / 60000));
+  if(minutes < 1) return I18N[LANG].now;
+  if(minutes < 60) return I18N[LANG].minutesAgo.replace("%s", minutes);
+  if(minutes < 1440) return I18N[LANG].hoursAgo.replace("%s", Math.floor(minutes / 60));
+  return new Intl.DateTimeFormat(LANG === "en" ? "en" : "zh-CN", {month:"short", day:"numeric"})
+    .format(new Date(Number(timestamp)));
+}
+function conversationTitle(prompt){
+  const clean = String(prompt).replace(/\s+/g, " ").trim();
+  const chars = [...clean];
+  return chars.length > 22 ? chars.slice(0, 22).join("") + "…" : clean;
+}
+function renderRecentMenu(){
+  const items = readHistory();
+  $("recent-list").innerHTML = items.length ? items.map(item =>
+    `<button type="button" class="recent-item" role="menuitem" data-conversation="${escAttr(item.id)}">`
+    + `<span>${esc(item.title)}</span><small>${esc(relativeTime(item.updatedAt))}</small></button>`
+  ).join("") : `<p class="recent-empty">${esc(I18N[LANG].noRecent)}</p>`;
+  $("clear-recent").disabled = !items.length;
+  $("export-qasm").disabled = !state.qasm;
+}
+function saveConversation(prompt){
+  const items = readHistory();
+  const current = items.find(item => item.id === currentConversationId);
+  const id = current && current.prompt === prompt ? current.id : String(Date.now());
+  currentConversationId = id;
+  const item = {
+    id, title:conversationTitle(prompt), prompt, state, steps:stepState,
+    fid:$("fid").textContent, tab:activeTab(), language:LANG, updatedAt:Date.now()
+  };
+  writeHistory([item, ...items.filter(saved => saved.id !== id && saved.prompt !== prompt)]);
+  renderRecentMenu();
+}
+function rememberConversationView(tab){
+  if(!currentConversationId) return;
+  const items = readHistory();
+  const item = items.find(saved => saved.id === currentConversationId);
+  if(!item) return;
+  item.tab = tab;
+  item.language = LANG;
+  writeHistory(items);
+}
+function restoreConversation(id){
+  const item = readHistory().find(saved => saved.id === id);
+  if(!item) return;
+  currentConversationId = item.id;
+  state = {...emptyState(), ...(item.state || {})};
+  $("prompt").value = item.prompt || "";
+  steps(item.steps || []);
+  $("fid").textContent = item.fid || I18N[LANG].fidNone;
+  LANG = item.language === "en" ? "en" : "zh";
+  localStorage.setItem("loomq-lang", LANG);
+  applyLanguage();
+  selectTab(item.tab || "circuit", false);
+  expandBuilder(false, false);
+  closeMenus();
+}
+function newConversation(){
+  currentConversationId = null;
+  state = emptyState();
+  $("prompt").value = "";
+  $("examples").hidden = true;
+  steps([]);
+  $("fid").textContent = I18N[LANG].fidNone;
+  selectTab("circuit", false);
+  expandBuilder(false, true);
+  closeMenus();
+}
+function exportQasm(){
+  if(!state.qasm) return;
+  const url = URL.createObjectURL(new Blob([state.qasm], {type:"text/plain;charset=utf-8"}));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `loomq-${Date.now()}.qasm`;
+  link.click();
+  URL.revokeObjectURL(url);
+  closeMenus();
+}
+function closeMenus(){
+  for(const [triggerId, popupId] of [["file-menu", "file-popup"], ["view-menu", "view-popup"]]){
+    $(popupId).hidden = true;
+    $(triggerId).setAttribute("aria-expanded", "false");
+  }
+}
+function toggleMenu(triggerId, popupId, refresh){
+  const willOpen = $(popupId).hidden;
+  closeMenus();
+  if(willOpen){
+    refresh();
+    $(popupId).hidden = false;
+    $(triggerId).setAttribute("aria-expanded", "true");
+  }
+}
+function updateViewMenu(){
+  const popup = $("view-popup");
+  if(!popup) return;
+  const current = activeTab();
+  popup.querySelectorAll("[data-view]").forEach(button => {
+    button.querySelector(".menu-check").textContent = button.dataset.view === current ? "✓" : "";
+  });
+  $("view-fullscreen").querySelector("span").textContent = windowIsFullscreen()
+    ? I18N[LANG].windowRestore : I18N[LANG].windowFullscreen;
+  $("toggle-tips").querySelector("span").textContent = $("help-rail").hidden
+    ? I18N[LANG].showTips : I18N[LANG].hideTips;
+}
+function bindMenu(triggerId, popupId, refresh){
+  const trigger = $(triggerId);
+  const toggle = () => toggleMenu(triggerId, popupId, refresh);
+  trigger.addEventListener("click", toggle);
+  trigger.addEventListener("keydown", event => {
+    if(event.key === "Enter" || event.key === " "){ event.preventDefault(); toggle(); }
+  });
+}
+
+$("help-rail").hidden = localStorage.getItem(TIPS_KEY) === "1";
+bindMenu("file-menu", "file-popup", renderRecentMenu);
+bindMenu("view-menu", "view-popup", updateViewMenu);
+$("new-conversation").addEventListener("click", newConversation);
+$("export-qasm").addEventListener("click", exportQasm);
+$("clear-recent").addEventListener("click", () => {
+  if(confirm(I18N[LANG].clearConfirm)){
+    localStorage.removeItem(HISTORY_KEY);
+    currentConversationId = null;
+    renderRecentMenu();
+  }
+});
+$("recent-list").addEventListener("click", event => {
+  const item = event.target.closest("[data-conversation]");
+  if(item) restoreConversation(item.dataset.conversation);
+});
+document.querySelectorAll("#view-popup [data-view]").forEach(button =>
+  button.addEventListener("click", () => { selectTab(button.dataset.view); closeMenus(); }));
+$("view-fullscreen").addEventListener("click", async () => {
+  closeMenus();
+  await toggleWindowFullscreen();
+});
+$("toggle-tips").addEventListener("click", () => {
+  $("help-rail").hidden = !$("help-rail").hidden;
+  localStorage.setItem(TIPS_KEY, $("help-rail").hidden ? "1" : "0");
+  updateViewMenu();
+  closeMenus();
+});
+$("help-menu").addEventListener("click", closeMenus);
+document.addEventListener("click", event => {
+  if(!event.target.closest(".menu-slot")) closeMenus();
+});
+document.addEventListener("keydown", event => { if(event.key === "Escape") closeMenus(); });
+applyLanguage();
+updateWindowControls();
+
+function expandBuilder(runDemo=false, focusPrompt=false, updateRoute=true){
+  $("landing").classList.add("builder-mode");
+  const route = runDemo ? "/builder?demo=bell" : "/builder";
+  if(updateRoute && location.pathname + location.search !== route){
+    history.pushState({}, "", route);
+  }
+  window.scrollTo({top:0, behavior:"smooth"});
+  if(runDemo){
+    $("prompt").value = LANG === "en" ? "Offline Bell-state demo" : "Bell 态示例";
+    build("/api/demo");
+  }else if(focusPrompt){
+    $("prompt").focus();
+  }
+}
+$("get-started").addEventListener("click", () => expandBuilder(false, true));
+$("launch-demo").addEventListener("click", () => expandBuilder(true));
+window.addEventListener("popstate", () =>
+  $("landing").classList.toggle("builder-mode", location.pathname === "/builder"));
+
+async function build(endpoint="/api/build"){
+  const prompt = $("prompt").value.trim();
+  if(!prompt){
+    steps([{k:"err", t:I18N[LANG].sayFirst}]);
+    $("prompt").focus();
+    return;
+  }
+  busy(true);
+  steps([{k:"run", t:I18N[LANG].understanding}]);
+  try{
+    const res = await fetch(endpoint, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({prompt, language: LANG})
+    });
+    const data = await res.json();
+    if(data.kind === "partial"){
+      state = {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:data.explain, explanation:null, concept:data.concept || null, tasks:data.tasks || null, circuits:null, backend:null, basis:null};
+      const knowledgeTask = (state.tasks || []).find(task => task.kind !== "circuit_build" && task.kind !== "backend_select");
+      const knowledgeNumber = knowledgeTask ? Number(knowledgeTask.id.split("_")[1]) : 1;
+      steps([
+        {k:"ok", t:`${I18N[LANG].task} ${knowledgeNumber}: ${I18N[LANG].understandQ}`},
+        {k:"err", t:`任务 ${taskNumber("circuit_build")}：候选电路未通过目标校验`}
+      ]);
+      $("fid").textContent = I18N[LANG].fidNone;
+      document.querySelectorAll(".tab").forEach(x =>
+        x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
+      render("explain");
+    } else if(data.kind === "explanation"){
+      state = {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:data.explain, explanation:null, concept:data.concept || null, tasks:data.tasks || null, circuits:null, backend:null, basis:null};
+      const intentLabel = data.intent?.label;
+      steps(intentLabel && data.concept
+        ? [{k:"ok", t:`${I18N[LANG].heard}${intentLabel}`}, {k:"ok", t:I18N[LANG].diagramDone}]
+        : [{k:"ok", t:I18N[LANG].answered}, {k:"err", t:I18N[LANG].diagramNa}]);
+      $("fid").textContent = I18N[LANG].fidNone;
+      document.querySelectorAll(".tab").forEach(x =>
+        x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
+      render("explain");
+    } else if(data.kind === "backend"){
+      state = {diagram:"", circuitData:null, result:null, expected:null, qasm:"", explain:data.explain, explanation:null, concept:null, tasks:data.tasks || null, circuits:null, backend:data.backend, basis:data.basis || null};
+      steps([{k:"ok", t:I18N[LANG].pickPlatform}, {k:"ok", t:I18N[LANG].filtered}]);
+      $("fid").textContent = I18N[LANG].fidNone;
+      document.querySelectorAll(".tab").forEach(x =>
+        x.setAttribute("aria-selected", String(x.dataset.t === "explain")));
+      render("explain");
+    } else if(data.ok){
+      state = {diagram:data.diagram, circuitData:data.circuit || null, result:data.probabilities, expected:data.expected_probabilities || null, qasm:data.qasm, explain:data.explain, explanation:data.explanation || null, concept:data.concept || null, tasks:data.tasks || null, circuits:data.circuits || null, validationStage:data.validation_stage || null, backend:null, basis:null};
+      const intentLabel = data.intent?.label || I18N[LANG].wantCircuit;
+      const compound = (data.tasks || []).length > 1;
+      const list = data.offline_demo
+        ? [{k:"ok", t:I18N[LANG].offlineDemo}]
+        : [{k:"ok", t:`${I18N[LANG].heard}${intentLabel}`}];
+      if(compound){
+        const knowledgeTask = (state.tasks || []).find(task => task.kind !== "circuit_build" && task.kind !== "backend_select");
+        if(knowledgeTask){
+          const knowledgeNumber = Number(knowledgeTask.id.split("_")[1]);
+          list.push({k:"ok", t:`${I18N[LANG].task} ${knowledgeNumber}: ${I18N[LANG].understoodSep}`});
+        }
+      }
+      circuitItems().forEach(item => list.push(item.ok
+        ? {k:"ok", t:`${I18N[LANG].task} ${taskIdNumber(item.task_id)}: ${I18N[LANG].taskGenRun}`}
+        : {k:"err", t:`${I18N[LANG].task} ${taskIdNumber(item.task_id)}: ${item.message}`}
+      ));
+      const semanticChecksPassed = circuitItems().filter(item => item.ok).every(item =>
+        ["fidelity", "distribution"].includes(item.validation_stage));
+      list.push(data.all_tasks_ok === false
+        ? {k:"err", t:I18N[LANG].somePassed}
+        : semanticChecksPassed
+          ? {k:"ok", t:I18N[LANG].allPassed}
+          : {k:"run", t:I18N[LANG].syntaxOnly});
+      steps(list);
+      const passedCircuits = circuitItems().filter(item => item.ok).length;
+      $("fid").textContent = circuitItems().length > 1 ? `${passedCircuits}/${circuitItems().length} ${I18N[LANG].circuitsPassed}`
+        : data.fidelity !== null ? `${I18N[LANG].fid} ${data.fidelity.toFixed(2)}` : I18N[LANG].fidNone;
+      document.querySelectorAll(".tab").forEach(x =>
+        x.setAttribute("aria-selected", String(x.dataset.t === "circuit")));
+      render("circuit");
+    } else {
+      steps([{k:"err", t:data.message}]);
+      $("fid").textContent = I18N[LANG].fidNone;
+      if(data.qasm){ state.qasm = data.qasm; }
+    }
+    if(data.ok || data.kind === "partial") saveConversation(prompt);
+  }catch(err){
+    steps([{k:"err", t:I18N[LANG].noServer}]);
+  }finally{
+    busy(false);
+  }
+}
+render("circuit");
+if(location.pathname === "/builder"){
+  const runDemo = new URLSearchParams(location.search).get("demo") === "bell";
+  expandBuilder(runDemo, !runDemo, false);
+}
+</script>
+</body>
+</html>

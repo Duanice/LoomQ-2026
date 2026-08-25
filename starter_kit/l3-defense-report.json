@@ -1,0 +1,32 @@
+{
+  "seed": 17001,
+  "programs": 1000,
+  "measurement_executions": 12028,
+  "quantum_operations_validated": 13285,
+  "max_cbits": 5,
+  "max_nesting_depth": 5,
+  "gate_coverage": [
+    "ccx",
+    "cu1",
+    "cx",
+    "h",
+    "ry",
+    "rz",
+    "s",
+    "sdg",
+    "swap",
+    "t",
+    "tdg",
+    "x"
+  ],
+  "instruction_coverage": [
+    "add",
+    "addi",
+    "beq",
+    "bne",
+    "j",
+    "li",
+    "sub"
+  ],
+  "failures": []
+}

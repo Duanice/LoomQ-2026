@@ -1,0 +1,33 @@
+{
+  "success": true,
+  "code": 10000,
+  "message": "success",
+  "obj": {
+    "taskId": "F016831B161D5F48125A7DAAA50DB335",
+    "chipId": "WK_C180",
+    "taskCalMethod": "1",
+    "taskFrom": "4",
+    "pilotTaskId": "3A2059A1AB474D6EB168A118838BA7CB",
+    "errCode": 0,
+    "startTime": 1786341126981,
+    "taskState": "3",
+    "measureQubitSize": [
+      2
+    ],
+    "aioTimeStamp": "9:1786341135382;8:1786341128970;7:1786341128704;2:1786341133944;",
+    "requiredCore": "0",
+    "taskType": "0",
+    "taskResult": [
+      "{\"value\":[0.4040861,0.0000001,0.0244737,0.5714399],\"key\":[\"0x0\",\"0x1\",\"0x2\",\"0x3\"]}"
+    ],
+    "totalTime": 8517,
+    "qpuRunTime": 326,
+    "pulseTime": null,
+    "cirExecuteTime": null,
+    "measureQubits": [],
+    "QMachineType": null,
+    "QProg": [
+      null
+    ]
+  }
+}
