@@ -1222,12 +1222,14 @@ class L2AgentTests(unittest.TestCase):
         self.assertIn("font-size:clamp(16px,.62vw,18px)", ui_source)
         self.assertIn(".window.window-maximized :is(.titlebar,.menubar", ui_source)
 
-    def test_tutorial_dialog_is_viewport_centered_with_safe_scroll(self):
+    def test_landing_and_tutorial_scale_for_large_viewports(self):
         ui_source = UI_PATH.read_text(encoding="utf-8")
 
+        self.assertIn(".landing{width:min(68vw,1580px); max-width:none; zoom:1.25}", ui_source)
         self.assertIn("display:flex; align-items:center", ui_source)
         self.assertIn("max-height:calc(100vh - 64px)", ui_source)
-        self.assertIn("transform:translateY(-3vh)", ui_source)
+        self.assertIn("transform:translateY(-8vh)", ui_source)
+        self.assertIn(".tutorial{width:min(920px,65vw); max-height:72vh; zoom:1.15}", ui_source)
         self.assertIn(".tutorial-body{padding:18px 20px 22px; overflow:auto}", ui_source)
 
     def test_edit_menu_is_current_and_help_opens_the_tutorial(self):

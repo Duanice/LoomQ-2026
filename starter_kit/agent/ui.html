@@ -75,6 +75,10 @@ body{
 .landing.builder-mode{max-width:860px}
 .landing.builder-mode .landing-header,.landing.builder-mode .hero-window{display:none}
 .landing.builder-mode .landing-grid{display:block; margin-top:0}
+@media (min-width:1600px){
+  .landing{width:min(68vw,1580px); max-width:none; zoom:1.25}
+  .landing.builder-mode{width:min(78vw,1200px); max-width:none}
+}
 
 .window{
   max-width:860px; margin:0 auto; padding:0; overflow:hidden; background:#fff;
@@ -167,10 +171,13 @@ body{
   background:rgba(27,27,58,.42);
 }
 .tutorial{
-  width:min(760px,100%); border:2px solid var(--y2k-ink); border-radius:8px;
+  width:min(840px,100%); border:2px solid var(--y2k-ink); border-radius:8px;
   max-height:calc(100vh - 64px); display:flex; flex-direction:column;
-  overflow:hidden; transform:translateY(-3vh);
+  overflow:hidden; transform:translateY(-8vh);
   background:#fff; box-shadow:7px 7px 0 var(--y2k-ink);
+}
+@media (min-width:1600px){
+  .tutorial{width:min(920px,65vw); max-height:72vh; zoom:1.15}
 }
 .tutorial-bar{
   display:flex; align-items:center; gap:10px; padding:9px 12px;
@@ -225,7 +232,7 @@ body{
   .tutorial-body{padding:15px}
   .coin{flex-direction:column; gap:10px}
 }
-@media (max-height:640px){.tutorial{transform:none}}
+@media (max-height:640px){.tutorial{max-height:calc(100vh - 36px); transform:none; zoom:1}}
 
 fieldset{
   margin:0 0 14px; padding:13px; border:2px solid var(--y2k-ink);
