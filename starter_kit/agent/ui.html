@@ -31,7 +31,7 @@ body{
 .out,.in{border:2px solid var(--y2k-ink)}
 
 /* Landing page: two honest entry points into the same builder workflow. */
-.landing{max-width:1180px; margin:0 auto}
+.landing{width:min(82vw,1050px); max-width:none; margin:0 auto; zoom:1.125}
 .landing-header{
   display:flex; align-items:center; justify-content:space-between; gap:16px; padding:13px 16px;
   border:2px solid var(--y2k-ink); border-radius:7px; background:#fff;
@@ -48,7 +48,7 @@ body{
 }
 .ready::before{content:""; width:9px; height:9px; border:1px solid var(--y2k-ink); border-radius:50%; background:#1bbf8b}
 .landing-grid{
-  display:grid; min-height:750px; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  display:grid; min-height:760px; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
   gap:22px; margin-top:28px
 }
 .hero-window{
@@ -78,14 +78,10 @@ body{
 .app-view .window{display:flex; height:100%; max-width:none; margin:0; flex-direction:column}
 .app-view .body{display:flex; min-height:0; flex:1; flex-direction:column}
 .app-view .panel{flex:1}
-.landing.builder-mode{max-width:860px}
+.landing.builder-mode{width:min(82vw,760px); max-width:none}
 .landing.builder-mode .landing-header,.landing.builder-mode .hero-window{display:none}
 .landing.builder-mode .landing-grid{display:block; margin-top:0}
-.landing.builder-mode .app-view .window{min-height:750px}
-@media (min-width:1600px){
-  .landing{width:min(68vw,1580px); max-width:none; zoom:1.25}
-  .landing.builder-mode{width:min(78vw,1200px); max-width:none}
-}
+.landing.builder-mode .app-view .window{min-height:760px}
 
 .window{
   max-width:860px; margin:0 auto; padding:0; overflow:hidden; background:#fff;
@@ -441,6 +437,7 @@ button:focus-visible{outline:3px solid rgba(255,143,207,.65); outline-offset:2px
 
 @media (max-width:640px){
   body{padding:10px; background-size:18px 18px}
+  .landing,.landing.builder-mode{width:auto; zoom:1}
   .landing-header{padding:10px 11px; box-shadow:4px 4px 0 var(--y2k-ink)}
   .brand{font-size:20px}
   .brand-mark{width:30px; height:30px}
