@@ -1226,6 +1226,8 @@ class L2AgentTests(unittest.TestCase):
         ui_source = UI_PATH.read_text(encoding="utf-8")
 
         self.assertIn(".landing{width:min(68vw,1580px); max-width:none; zoom:1.25}", ui_source)
+        self.assertIn("display:grid; min-height:750px", ui_source)
+        self.assertIn(".app-view .panel{flex:1}", ui_source)
         self.assertIn("display:flex; align-items:center", ui_source)
         self.assertIn("max-height:calc(100vh - 64px)", ui_source)
         self.assertIn("transform:translateY(-8vh)", ui_source)
